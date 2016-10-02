@@ -118,10 +118,10 @@ This detection plugin creates so-called "bait" files either within all folders o
   </td>
 </tr>
 </table>
-
-Note That even though stopping the array also stops SMB/NFS/AFP, you should also select those in addition to stopping the array because if the unRaid GUI is busy or crashed, then the network services will still get stopped immediately.
-
+Note: unRaid will automatically restart SMB/NFS/AFP within a minute after it being stopped, but by stopping those services, you will at the very least interrupt the attack in progress.  Additionally, the unRaid stops the networks services rather late in the stop array procedure, so you should enable those options for better protection
 
 <input type='button' id='apply' value='Apply' disabled onclick='apply();'>
 <input type='button' id='done' value='Done' onclick='done();'>
+<br><br><br>
+<center>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52458.0' target='_blank'>HERE</a></center>
 <a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7M7CBCVU732XG' target='_blank'><img style='position: fixed; bottom: 50px; right: 50px;' src='/plugins/ransomware.bait/images/donate.gif'></a>
