@@ -1,7 +1,7 @@
 <?PHP
 
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
-
+exec("mkdir -p /tmp/ransomware");
 function getSettings() {
   $rawSettings = $_POST['settings'];
   

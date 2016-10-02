@@ -6,7 +6,6 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 function stopEverything($path) {
   global $settings;
   
-  logger("Possible Ransomware attack detected on file $path");
   if ( $settings['stopSMB'] ) {
     logger("Stopping SMB");
     exec("/etc/rc.d/rc.samba stop");
@@ -19,7 +18,9 @@ function stopEverything($path) {
     logger("Stopping NFS");
     exec("/etc/rc.d/rc.nfsd stop");
   }
+    
   notify("Ransomware Protection","Possible Ransomware Attack Detected","Possible Attack On $path","","alert");
+  logger("Possible Ransomware attack detected on file $path");
 }
 
 function createBait($path) {
@@ -62,8 +63,12 @@ $settings = readJsonFile($ransomwarePaths['settings']);
 if ( $settings['enableService'] != "true" ) {
   exit;
 }
-if ( ! is_file("/usr/bin/inotifywait") {
+if ( ! is_file("/usr/bin/inotifywait") ) {
   logger("inotify tools not installed.  Install it via NerdPack plugin available within Community Applications");
+}
+
+if ( is_file($ransomwarePaths['PID']) ) {
+  break;
 }
 exec("mkdir -p /tmp/ransomware/");
 @unlink($ransomwarePaths['event']);
@@ -71,8 +76,7 @@ exec("mkdir -p /tmp/ransomware/");
 
 $pid = getmypid();
 file_put_contents($ransomwarePaths['PID'],$pid);
-
-while (true) {
+while ( true ) {
   unset($totalDeleted);
   $filelist = @file_get_contents($ransomwarePaths['filelist']);
   if ( $filelist ) {
@@ -96,11 +100,11 @@ while (true) {
     $root = "/usr/local/emhttp/plugins/ransomware.bait/bait";
   }
   $rootContents = scan($root);
-    
+  
   foreach ($rootContents as $baitFile) {
     $md5Array[$baitFile] = md5_file("$root/$baitFile");
   }
-  
+
   unset($totalBait);
   @unlink("/tmp/ransomware/filelist");
   if ( $settings['folders'] == "root" ) {
@@ -108,7 +112,7 @@ while (true) {
   } else {
     logger("Creating bait files, all folders of all shares.  This may take a bit");
   }
-  if ( is_dir("/mnt/user") {
+  if ( is_dir("/mnt/user") ) {
     $userBase = "/mnt/user";
   } else {
     $userBase = "/mnt";
@@ -123,7 +127,6 @@ while (true) {
     }
   }
   logger("Total bait files created: $totalBait");
-
   logger("Starting Background Monitoring Of Bait Files");
   while ( true ) {
     @unlink("/tmp/ransomware/event");
@@ -138,9 +141,11 @@ while (true) {
         stopEverything($affectedFile);
         break;
       }
-    }
+    } 
   }
+  $settings = readJsonFile($ransomwarePaths['settings']);
   if ( $settings['stopArray'] == 'true' ) {
+    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopArray.sh");
     break;
   }
 }
