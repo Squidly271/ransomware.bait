@@ -3,145 +3,125 @@ Icon="lock.png"
 Title="Ransomware Protection"
 ---
 <?
-$sName = "ransomware.bait";
 
-if ( is_file("/boot/config/plugins/ransomware.bait/filelist") ) {
-  $baitExists = "true";
-} else {
-  $baitExists = "false";
-}
+$inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
 
-if ( is_file("/boot/config/plugins/ransomware.bait/settings.json") ) {
-  $allSettings = json_decode(file_get_contents("/boot/config/plugins/ransomware.bait/settings.json"),true);
-  $keys = array_keys($allSettings);
+$settings = json_decode(@file_get_contents("/boot/config/plugins/ransomware.bait/settings.json"),true);
+if ( ! $settings['enableService'] ) { $settings['enableService'] = "false"; }  
+if ( ! $settings['folders'] )       { $settings['folders'] = "root"; }
+if ( ! $settings['stopSMB'] )       { $settings['stopSMB'] = "true"; }
+if ( ! $settings['stopNFS'] )       { $settings['stopNFS'] = "true"; }
+if ( ! $settings['stopAFP'] )       { $settings['stopAFP'] = "true"; }
+if ( ! $settings['stopArray'] )     { $settings['stopArray'] = "true";}
   
-  $settingsOutput = "<script>";
-  foreach ($keys as $key) {
-    $settingsOutput .= "$('#$key').val('".$allSettings[$key]."');";
-  }
-  $settingsOutput .= "</script>";
-}
+$event = trim(@file_get_contents("/tmp/ransomware/detected"));
 
 ?>
 <script>
-URL = '/plugins/ransomware.bait/include/exec.php'
+var URL = "/plugins/ransomware.bait/include/exec.php";
 
 $(function() {
-  if ( "<?=$baitExists?>" == "true" ) {
-    $("#createBait").prop("disabled",true);
-    $("#deleteBait").prop("disabled",false);
-  } else {
-    $("#createBait").prop("disabled",false);
-    $("#deleteBait").prop("disabled",true);
-  }
-  $("#stopAction").val("<?=$allSettings['stopAction']?>");
-});
-
-function getSettings() {
-  var settings = new Array();
+  $('#enableService').val('<?=$settings['enableService']?>');
+  $('#folders').val('<?=$settings['folders']?>');
+  $('#stopSMB').val('<?=$settings['stopSMB']?>');
+  $('#stopNFS').val('<?=$settings['stopNFS']?>');
+  $('#stopAFP').val('<?=$settings['stopAFP']?>');
+  $('#stopArray').val('<?=$settings['stopArray']?>');
   
-  $(".settings").each(function() {
-    var setting = $(this).val();
-    var newSetting = new Array(this.id,setting);
-    settings.push(newSetting);
-  });
-  return settings;
-}
-
-function createBait() {
-  var settings = getSettings();
-  swal({
-    title: "Create Bait Files?",
-    text: "Are you sure you want to create the bait files?  <font color='red'>Any modification or deletion of these files will immediately stop all network access to your server.</font>",
-    type: "warning",
-    showCancelButton: true,
-    showConfirmButton: true,
-    showLoaderOnConfirm: true,
-    closeOnConfirm: false,
-    html: true
-  },
-  function(isConfirm) {
-    if (isConfirm) {
-      swal("Creating Bait Files","This may take a minute or two","info");
-      $.post(URL,{action:'createBait',settings:settings},function(data) {
-        if (data) {
-          $("#createBait").prop("disabled",true);
-          $("#deleteBait").prop("disabled",false);
-          swal({
-            type: "success",
-            title: "Bait Files Created",
-            text: "Any modification or deletion/renaming of the files will result in network access being stopped to your server<br><br>"+data,
-            showCancelButton: false,
-            showConfirmButton: true,
-            closeOnConfirm: true,
-            allowOutsideClick: true,
-            html: true
-          });
-        }
-      });
-    }
-  });   
-}
-
-function deleteBait() {
-  swal({
-    title: "Delete Bait Files",
-    text: "Are you sure you want to delete the bait files and stop monitoring them for ransomware attacks?",
-    type: "warning",
-    showCancelButton: true,
-    showConfirmButton: true,
-    showLoaderOnConfirm: true,
-    closeOnConfirm: false,
-    closeOnCancel: true,
-    html: true
-  },
-  function(isConfirm) {
-    if (isConfirm) {
-      swal("Deleting bait files","This may take a minute or two","info");
-      $.post(URL,{action:'deleteBait'},function(data) {
-        if (data) {
-          $("#createBait").prop("disabled",false);
-          $("#deleteBait").prop("disabled",true);
-          swal({
-            title: "Bait Files Deleted",
-            text: data,
-            html: true,
-            showCancelButton: false,
-            showConfirmButton: true,
-            closeOnConfirm: true,
-            type: "success"
-          });
-        }
-      });
-    }
-  });
-}
+  if ( '<?=$inotifyInstalled?>' == 'false' ) {
+    swal({
+      title: "inotify tools not installed",
+      text: "This plugin requires inotify tools (inotifywait) to be installed.  To install this, you must install the NerdPack plugin (available within Community Applications), and set inotifytools to install within the NerdPack Settings",
+      type: "error"      
+    });
+  }
+  
+  if ( '<?=$event?>' ) {
+    swal({
+      title: "Possible Ransomware Attack",
+      text: "<font color='red'><?=$event?></font> has been deleted or modified (either way possibly encrypted).  If you had this plugin set to stop network services, you must stop and restart your array in order to enable them again",
+      type: "error",
+      html: true
+    });
+  }
+});
 
 function enableApply() {
   $("#apply").prop("disabled",false);
 }
 
-function applyChanges() {
-  var settings = getSettings();
-  $.post(URL,{action:'applySettings',settings:settings});
-  $("#apply").prop("disabled",true);
+function apply() {
+  var settings = new Array();
+  
+  $(".settings").each(function() {
+    var usersChoice = $(this).val();
+    var newSetting = new Array(this.id,usersChoice);
+    
+    settings.push(newSetting);
+  });
+  $.post(URL,{action:'applySettings',settings:settings}, function(data) {
+    if (data) {
+      $("#apply").prop('disabled',true);
+    }
+  });
 }
-
-$(function() {
-  showStatus('<?=$sName?>');
-});
 </script>
 <span id='settingsScript'><?=$settingsOutput?></span>
 This detection plugin creates so-called "bait" files either within all folders of a share or only within the root rolder of each share (note that any appdata folder is specifically excluded)  If those files should change (ie: become encrypted) or if they are deleted/renamed (which seems to be how most ransomware malware operates), then SMB will be immediately stopped to prevent further encryption to your files)<br>In the unlikely event of a naming conflict between the bait files and pre-existing files already on the array, the original files will not be touched, and they will not be monitored for changes<br><br>
 
-<font size='3' color='red'>Actions</font><br><br>
-<font color='purple'>Create Bait Files</font><br>
-Where To Create: <select class='settings' id='folders'>
-<option value='root'>Root of shares only</option>
-<option value='all'>All folders of shares</option>
+<table>
+<tr>
+  <td width=25%><b>Enable Ransomware Bait Service</b></td>
+  <td><select class='settings' id='enableService' onchange='enableApply();'>
+    <option value='false'>No</option>
+    <option value='true'>Yes</option>
+  </td>
+</tr>
+<tr>
+  <td><b>Bait File Placement<b></td>
+  <td><select class='settings' id='folders' onchange='enableApply();'>
+    <option value='root'>Root only of shares</option>
+    <option value='all'>All folders of shares</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Stop SMB on Detection</b></td>
+  <td><select class='settings' id='stopSMB' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Stop NFS on Detection</b></td>
+  <td><select class='settings' id='stopNFS' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Stop AFP on Detection</b></td>
+  <td><select class='settings' id='stopAFP' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Stop Array on Detection</b></td>
+  <td><select class='settings' id='stopArray' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
+</table>
 
-<input id='createBait' type='button' onclick='createBait();' value='Create Bait Files' disabled>
+Note That even though stopping the array also stops SMB/NFS/AFP, you should also select those in addition to stopping the array because if the unRaid GUI is busy or crashed, then the network services will still get stopped immediately.
 
-<input id='deleteBait' type='button' onclick='deleteBait();' value='Delete Bait Fales' disabled>
 
-<span id='errors'></span>
+<input type='button' id='apply' value='Apply' disabled onclick='apply();'>
+<input type='button' id='done' value='Done' onclick='done();'>
+<a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7M7CBCVU732XG' target='_blank'><img style='position: fixed; bottom: 50px; right: 50px;' src='/plugins/ransomware.bait/images/donate.gif'></a>
