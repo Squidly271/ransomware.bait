@@ -3,6 +3,7 @@
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
 <!ENTITY version   "2016.10.02a">
+<!ENTITY md5       "8de14ceab94ffad475804256f9b8ceec">
 <!ENTITY launch    "Settings/ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
