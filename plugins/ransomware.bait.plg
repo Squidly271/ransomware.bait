@@ -33,6 +33,7 @@ The 'post-install' script
 echo "--------------------------------"
 echo "Ransomware Protection Installed"
 echo "Copyright 2016, Andrew Zawadzki"
+echo "Version: &version;"
 echo "--------------------------------"
 </INLINE>
 </FILE>
