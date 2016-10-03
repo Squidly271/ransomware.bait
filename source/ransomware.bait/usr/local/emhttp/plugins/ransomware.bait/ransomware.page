@@ -123,5 +123,5 @@ Note: unRaid will automatically restart SMB/NFS/AFP within a minute after it bei
 <input type='button' id='apply' value='Apply' disabled onclick='apply();'>
 <input type='button' id='done' value='Done' onclick='done();'>
 <br><br><br>
-<center>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52458.0' target='_blank'>HERE</a></center>
+<center>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a></center>
 <a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7M7CBCVU732XG' target='_blank'><img style='position: fixed; bottom: 50px; right: 50px;' src='/plugins/ransomware.bait/images/donate.gif'></a>
