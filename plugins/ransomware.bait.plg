@@ -2,9 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2016.10.02">
-<!ENTITY md5       "384b91a26c66e4ba8a48d56d56235d3b">
-<!ENTITY launch    "Settings/ranwomware">
+<!ENTITY version   "2016.10.02a">
+<!ENTITY launch    "Settings/ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/master/plugins/&name;.plg">
