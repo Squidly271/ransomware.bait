@@ -20,7 +20,7 @@ if ( $filelist ) {
   foreach ($allFiles as $baitFile) {
     if ( is_file($baitFile) ) {
       ++$totalDeleted;
-      echo "$baitFile\n";
+ #     echo "$baitFile\n";
       unlink($baitFile);
     }
   }
