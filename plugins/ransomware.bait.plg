@@ -30,11 +30,14 @@ The 'post-install' script
 -->
 <FILE Run="/bin/bash">
 <INLINE>
+/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
+/usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh
 echo "--------------------------------"
 echo "Ransomware Protection Installed"
 echo "Copyright 2016, Andrew Zawadzki"
 echo "Version: &version;"
 echo "--------------------------------"
+
 </INLINE>
 </FILE>
 
