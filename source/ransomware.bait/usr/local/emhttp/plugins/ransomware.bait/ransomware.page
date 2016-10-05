@@ -13,6 +13,7 @@ if ( ! $settings['stopSMB'] )       { $settings['stopSMB'] = "true"; }
 if ( ! $settings['stopNFS'] )       { $settings['stopNFS'] = "true"; }
 if ( ! $settings['stopAFP'] )       { $settings['stopAFP'] = "true"; }
 if ( ! $settings['stopArray'] )     { $settings['stopArray'] = "true";}
+if ( ! $settings['readOnlySMB'] )   { $settings['readOnlySMB'] = "true"; }
   
 $event = trim(@file_get_contents("/tmp/ransomware/detected"));
 
@@ -86,6 +87,13 @@ This detection plugin creates so-called "bait" files either within all folders o
   </td>
 </tr>
 <tr>
+  <td><b>Set SMB to be read-only on detection</b></td>
+  <td><select class='settings' id='readOnlySMB' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+  </td>
+</tr>
+<!-- <tr>
   <td><b>Stop SMB on Detection</b></td>
   <td><select class='settings' id='stopSMB' onchange='enableApply();'>
     <option value='true'>Yes</option>
@@ -108,7 +116,7 @@ This detection plugin creates so-called "bait" files either within all folders o
     <option value='false'>No</option>
     </select>
   </td>
-</tr>
+</tr> -->
 <tr>
   <td><b>Stop Array on Detection</b></td>
   <td><select class='settings' id='stopArray' onchange='enableApply();'>
@@ -118,7 +126,6 @@ This detection plugin creates so-called "bait" files either within all folders o
   </td>
 </tr>
 </table>
-Note: unRaid will automatically restart SMB/NFS/AFP within a minute after it being stopped, but by stopping those services, you will at the very least interrupt the attack in progress.  Additionally, the unRaid stops the networks services rather late in the stop array procedure, so you should enable those options for better protection
 
 <input type='button' id='apply' value='Apply' disabled onclick='apply();'>
 <input type='button' id='done' value='Done' onclick='done();'>

@@ -31,7 +31,6 @@ switch ($_POST['action']) {
     
     writeJsonFile("/boot/config/plugins/ransomware.bait/settings.json",$settings);
     if ( $settings['enableService'] == "true" ) {
-      exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php");
       exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh");
     } else {
       exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php");

@@ -6,21 +6,55 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 function stopEverything($path) {
   global $settings;
   
-  if ( $settings['stopSMB'] ) {
+  exec("/usr/bin/smbstatus",$output);
+  if ( $settings['readOnlySMB'] || $settings['stopArray'] ) {
+    smbReadOnly();
+  }
+/*   if ( $settings['stopSMB'] ) {
     logger("Stopping SMB");
     exec("/etc/rc.d/rc.samba stop");
+  } */
+  if ( $settings['stopArray'] ) {
+    logger("Stopping AFP");
+    exec("/etc/rc.d/rc.atalk stop");    
+    logger("Stopping NFS");
+    exec("/etc/rc.d/rc.nfsd stop");
   }
-  if ( $settings['stopAFP'] ) {
+/*   if ( $settings['stopAFP'] ) {
     logger("Stopping AFP");
     exec("/etc/rc.d/rc.atalk stop");
   }
   if ( $settings['stopNFS'] ) {
     logger("Stopping NFS");
     exec("/etc/rc.d/rc.nfsd stop");
-  }
+  } */
     
   notify("Ransomware Protection","Possible Ransomware Attack Detected","Possible Attack On $path","","alert");
+  logger("..");
   logger("Possible Ransomware attack detected on file $path");
+  logger("SMB Status:");
+  foreach($output as $statusLine) {
+    logger($statusLine);
+  }
+}
+
+function smbReadOnly() {
+  global $ransomwarePaths;
+  
+  copy("/etc/samba/smb-shares.conf",$ransomwarePaths['smbShares']);
+  $smb = explode("\n",file_get_contents("/etc/samba/smb-shares.conf"));
+  foreach ($smb as $smbLine) {
+    $smbLineNew = trim($smbLine);
+    if ( startsWith($smbLineNew,"writeable") ) {
+      $smbLineNew = "writeable = no";
+    }
+    if ( startsWith($smbLineNew,"write list") ) {
+      $smbLineNew = "";
+    }
+    $newSMB .= $smbLineNew."\n";
+  }
+  file_put_contents("/etc/samba/smb-shares.conf",$newSMB);
+  exec("/etc/rc.d/rc.samba restart");
 }
 
 function createBait($path) {
@@ -63,16 +97,28 @@ $settings = readJsonFile($ransomwarePaths['settings']);
 if ( $settings['enableService'] != "true" ) {
   exit;
 }
+if ( ! $settings['enableService'] ) { $settings['enableService'] = "false"; }  
+if ( ! $settings['folders'] )       { $settings['folders'] = "root"; }
+if ( ! $settings['stopSMB'] )       { $settings['stopSMB'] = "true"; }
+if ( ! $settings['stopNFS'] )       { $settings['stopNFS'] = "true"; }
+if ( ! $settings['stopAFP'] )       { $settings['stopAFP'] = "true"; }
+if ( ! $settings['stopArray'] )     { $settings['stopArray'] = "true";}
+if ( ! $settings['readOnlySMB'] )   { $settings['readOnlySMB'] = "true"; }
+
 if ( ! is_file("/usr/bin/inotifywait") ) {
   logger("inotify tools not installed.  Install it via NerdPack plugin available within Community Applications");
+  notify("Ransomware Protection","inotify-tools not installed","inotify tools must be installed (via NerdPack plugin) for this plugin to operate","","warning");
+  exit;
 }
 
 if ( is_file($ransomwarePaths['PID']) ) {
-  break;
+  logger("ransomware protection appears to be already running");
+  exit;
 }
 exec("mkdir -p /tmp/ransomware/");
 @unlink($ransomwarePaths['event']);
 @unlink($ransomwarePaths['detected']);
+@unlink($ransomwarePaths['smbShares']);
 
 $pid = getmypid();
 file_put_contents($ransomwarePaths['PID'],$pid);
