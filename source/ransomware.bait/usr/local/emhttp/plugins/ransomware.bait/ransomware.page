@@ -3,8 +3,11 @@ Icon="lock.png"
 Title="Ransomware Protection"
 ---
 <?
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 $inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
+$smbReadOnlyMode = is_file($ransomwarePaths['smbShares']) ? "true" : "false";
+$smbHistory = is_file($ransomwarePaths['smbStatusFile']) ? "true" : "false";
 
 $settings = json_decode(@file_get_contents("/boot/config/plugins/ransomware.bait/settings.json"),true);
 if ( ! $settings['enableService'] ) { $settings['enableService'] = "false"; }  
@@ -14,8 +17,10 @@ if ( ! $settings['stopNFS'] )       { $settings['stopNFS'] = "true"; }
 if ( ! $settings['stopAFP'] )       { $settings['stopAFP'] = "true"; }
 if ( ! $settings['stopArray'] )     { $settings['stopArray'] = "true";}
 if ( ! $settings['readOnlySMB'] )   { $settings['readOnlySMB'] = "true"; }
+if ( ! $settings['unRaidPort'] )    { $settings['unRaidPort'] = 80; }
+if ( ! $settings['excludeAppdata'] ) { $settings['excludeAppdata'] = 'true'; }
   
-$event = trim(@file_get_contents("/tmp/ransomware/detected"));
+$event = trim(@file_get_contents($ransomwarePaths['detected']));
 
 ?>
 <script>
@@ -28,24 +33,70 @@ $(function() {
   $('#stopNFS').val('<?=$settings['stopNFS']?>');
   $('#stopAFP').val('<?=$settings['stopAFP']?>');
   $('#stopArray').val('<?=$settings['stopArray']?>');
+  $('#readOnlySMB').val('<?=$settings['readOnlySMB']?>');
+  $('#unRaidPort').val('<?=$settings['unRaidPort']?>');
+  $('#excludeAppdata').val('<?=$settings['excludeAppdata']?>');
   
   if ( '<?=$inotifyInstalled?>' == 'false' ) {
     swal({
       title: "inotify tools not installed",
       text: "This plugin requires inotify tools (inotifywait) to be installed.  To install this, you must install the NerdPack plugin (available within Community Applications), and set inotifytools to install within the NerdPack Settings",
-      type: "error"      
+      type: "error"
     });
+  }
+  if ( '<?=$smbHistory?>' == "true" ) {
+    $("#smbHistory").show();
   }
   
-  if ( '<?=$event?>' ) {
-    swal({
-      title: "Possible Ransomware Attack",
-      text: "<font color='red'><?=$event?></font> has been deleted or modified (either way possibly encrypted).  If you had this plugin set to stop network services, you must stop and restart your array in order to enable them again",
-      type: "error",
-      html: true
-    });
+  if ( '<?=$smbReadOnlyMode?>' == "true" ) {
+    $("#setReadOnlyMode").hide();
+    resetSMBPermissions();
+  } else {
+    if ( '<?=$event?>' ) {
+      swal({
+        title: "<font color='red'>Possible Ransomware Attack</font>",
+        text: "<font color='red'><?=$event?></font> has been deleted or modified (either way possibly encrypted).",
+        type: "error",
+        html: true
+      });
+    }
   }
 });
+
+function resetSMBPermissions() {
+
+  var title = "<font color='red'>SMB in Read-Only Mode";
+  var text  =  "SMB has been set to be in read-only mode due to a <font color='red'>possible attack</font> or <em>User Selection</em>.  You can choose to reset the SMB permissions by clicking below.  If this was caused by an attack, it is not advised to reset permission to normal";
+  
+  $("#readOnlyMode").show();
+  swal({
+    title: title,
+    text: text,
+    type: "warning",
+    html: true,
+    showCancelButton: true,
+    showConfirmButton: true,
+    confirmButtonText: "Restore SMB Permissions",
+    allowOutsideClick: true,
+    closeOnConfirm: false
+  },
+  function(isConfirm) {
+    if (isConfirm){
+      $("#readOnlyMode").hide();
+      $("#setReadOnlyMode").show();
+      $.post(URL,{action:'resetSMBPermissions'});
+      swal("Permissions Reset","The SMB permissions have been reset back to their normal values.  There will be an interruption in access to the server for a few moments","success");
+    }
+  });
+}
+
+function setReadOnly() {
+  $.post(URL,{action:'setReadOnly'});
+  $("#setReadOnlyMode").hide();
+  $("#readOnlyMode").show();
+  smbReadOnlyReason = "user";
+  swal("Read Only Mode Set","SMB has been set to be in read-only mode.  There will be an interruption in access to the server for a few moments","success");
+}  
 
 function enableApply() {
   $("#apply").prop("disabled",false);
@@ -66,6 +117,11 @@ function apply() {
     }
   });
 }
+
+function viewHistory() {
+  openBox("/plugins/ransomware.bait/scripts/showHistory.php","Attack History",550,1100);
+}
+
 </script>
 <span id='settingsScript'><?=$settingsOutput?></span>
 This detection plugin creates so-called "bait" files either within all folders of a share or only within the root rolder of each share (note that any appdata folder is specifically excluded)  If those files should change (ie: become encrypted) or if they are deleted/renamed (which seems to be how most ransomware malware operates), then SMB will be immediately stopped to prevent further encryption to your files)<br>In the unlikely event of a naming conflict between the bait files and pre-existing files already on the array, the original files will not be touched, and they will not be monitored for changes<br><br>
@@ -83,6 +139,14 @@ This detection plugin creates so-called "bait" files either within all folders o
   <td><select class='settings' id='folders' onchange='enableApply();'>
     <option value='root'>Root only of shares</option>
     <option value='all'>All folders of shares</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Exclude AppData Folders</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded</td>
+  <td><select class='settings' id='excludeAppdata' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
     </select>
   </td>
 </tr>
@@ -125,10 +189,18 @@ This detection plugin creates so-called "bait" files either within all folders o
     </select>
   </td>
 </tr>
+<tr>
+  <td><b>unRaid's Listening Port</b></td>
+  <td><input type='number' id='unRaidPort' class='settings' width="50" onchange='enableApply();'></td>
+</tr>
 </table>
 
 <input type='button' id='apply' value='Apply' disabled onclick='apply();'>
 <input type='button' id='done' value='Done' onclick='done();'>
 <br><br><br>
+
+<div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/lock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Set Immediately Set SMB to Be Read-Only</font></figcaption></figure></center></div>
+<div id='readOnlyMode' style='display:none'><center><font size='3' color='red'>SMB RUNNING IN READ-ONLY MODE.  Click <a onclick='resetSMBPermissions();' style='cursor:pointer'>HERE</a> to reset the permissions</font></center><br><br></div>
+<div id='smbHistory' style='display:none'><a onclick='viewHistory();' style='cursor:pointer'>Click here to display the attack history</a></div>
 <center>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a></center>
 <a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7M7CBCVU732XG' target='_blank'><img style='position: fixed; bottom: 50px; right: 50px;' src='/plugins/ransomware.bait/images/donate.gif'></a>

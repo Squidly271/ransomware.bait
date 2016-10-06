@@ -3,6 +3,7 @@
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 
+file_put_contents($ransomwarePaths['stoppingService'],"stopping");
 @unlink($ransomwarePaths['detected']);
 $pid = @file_get_contents($ransomwarePaths['PID']);
 if ($pid) {

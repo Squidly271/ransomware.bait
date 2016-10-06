@@ -4,17 +4,17 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 function stopEverything($path) {
-  global $settings;
+  global $settings, $ransomwarePaths;
   
   exec("/usr/bin/smbstatus",$output);
-  if ( $settings['readOnlySMB'] || $settings['stopArray'] ) {
+  if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") ) {
     smbReadOnly();
   }
 /*   if ( $settings['stopSMB'] ) {
     logger("Stopping SMB");
     exec("/etc/rc.d/rc.samba stop");
   } */
-  if ( $settings['stopArray'] ) {
+  if ( $settings['stopArray'] == "true" ) {
     logger("Stopping AFP");
     exec("/etc/rc.d/rc.atalk stop");    
     logger("Stopping NFS");
@@ -33,29 +33,13 @@ function stopEverything($path) {
   logger("..");
   logger("Possible Ransomware attack detected on file $path");
   logger("SMB Status:");
+  file_put_contents($ransomwarePaths['smbStatusFile'],"\r\n\r\nTime Of Attack:".date("r",time())."\r\n\r\n",FILE_APPEND);
   foreach($output as $statusLine) {
     logger($statusLine);
+    file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
   }
 }
 
-function smbReadOnly() {
-  global $ransomwarePaths;
-  
-  copy("/etc/samba/smb-shares.conf",$ransomwarePaths['smbShares']);
-  $smb = explode("\n",file_get_contents("/etc/samba/smb-shares.conf"));
-  foreach ($smb as $smbLine) {
-    $smbLineNew = trim($smbLine);
-    if ( startsWith($smbLineNew,"writeable") ) {
-      $smbLineNew = "writeable = no";
-    }
-    if ( startsWith($smbLineNew,"write list") ) {
-      $smbLineNew = "";
-    }
-    $newSMB .= $smbLineNew."\n";
-  }
-  file_put_contents("/etc/samba/smb-shares.conf",$newSMB);
-  exec("/etc/rc.d/rc.samba restart");
-}
 
 function createBait($path) {
   global $settings,$appdata, $root, $rootContents, $totalBait, $errorBait;
@@ -83,7 +67,7 @@ function createBait($path) {
       $source = "$root/$baitFile";
 
       if ( !copy($source,$destination) ) {
-        $errorBait[] = "$path/$entry/$baitFile";
+        $errorBait[] = $destination;
         @unlink($destination);
       } else {
         ++$totalBait;
@@ -92,9 +76,13 @@ function createBait($path) {
     }
   }
 }
-
+$unRaidVars = parse_ini_file("/var/local/emhttp/var.ini");
+if ( strtolower($unRaidVars['mdState']) == "stopped" ) {
+  exit;
+}
 $settings = readJsonFile($ransomwarePaths['settings']);
 if ( $settings['enableService'] != "true" ) {
+  logger("No Settings Defined For Ransomware Protection - Exiting");
   exit;
 }
 if ( ! $settings['enableService'] ) { $settings['enableService'] = "false"; }  
@@ -104,6 +92,8 @@ if ( ! $settings['stopNFS'] )       { $settings['stopNFS'] = "true"; }
 if ( ! $settings['stopAFP'] )       { $settings['stopAFP'] = "true"; }
 if ( ! $settings['stopArray'] )     { $settings['stopArray'] = "true";}
 if ( ! $settings['readOnlySMB'] )   { $settings['readOnlySMB'] = "true"; }
+if ( ! $settings['unRaidPort'] )    { $settings['unRaidPort'] = 80; }
+if ( ! $settings['excludeAppdata'] ) { $settings['excludeAppdata'] = 'true'; }
 
 if ( ! is_file("/usr/bin/inotifywait") ) {
   logger("inotify tools not installed.  Install it via NerdPack plugin available within Community Applications");
@@ -116,6 +106,7 @@ if ( is_file($ransomwarePaths['PID']) ) {
   exit;
 }
 exec("mkdir -p /tmp/ransomware/");
+@unlink($ransomwarePaths['stoppingService']);
 @unlink($ransomwarePaths['event']);
 @unlink($ransomwarePaths['detected']);
 @unlink($ransomwarePaths['smbShares']);
@@ -139,7 +130,9 @@ while ( true ) {
     unlink("/boot/config/plugins/ransomware.bait/filelist");
   }
 
-  $appdata = getAppData();
+  if ( ($settings['excludeAppdata'] == 'true') || ($settings['folders'] != 'root') ) {
+    $appdata = getAppData();
+  }
   if ( scan("/boot/config/plugins/ransomware.bait/bait") ) {
     $root = "/boot/config/plugins/ransomware.bait/bait";
   } else {
@@ -177,6 +170,10 @@ while ( true ) {
   while ( true ) {
     @unlink("/tmp/ransomware/event");
     exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']);
+    if ( is_file($ransomwarePaths['stoppingService']) ) {
+      unlink($ransomwarePaths['stoppingService']);
+      exit;
+    }      
     $affectedFile = trim(file_get_contents($ransomwarePaths['event']));
     file_put_contents($ransomwarePaths['detected'],$affectedFile);
     if ( ! is_file($affectedFile) ) {
@@ -191,6 +188,7 @@ while ( true ) {
   }
   $settings = readJsonFile($ransomwarePaths['settings']);
   if ( $settings['stopArray'] == 'true' ) {
+    rename($ransomwarePaths['smbShares'],"/etc/samba/smb-shares.conf");
     exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopArray.sh");
     break;
   }

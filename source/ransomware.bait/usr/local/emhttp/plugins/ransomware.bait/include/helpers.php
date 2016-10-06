@@ -76,7 +76,6 @@ function findAppdata($volumes) {
 ############################################
 
 function logger($string) {
-  echo "$string\n";
   shell_exec('logger ransomware protection:"'.$string.'"');
 }
 
@@ -146,7 +145,40 @@ function startsWith($haystack, $needle) {
   return $needle === "" || strripos($haystack, $needle, -strlen($haystack)) !== FALSE;
 }
 
+###############################################
+#                                             #
+# Function to get the contents of a directory #
+#                                             #
+###############################################
+
 function scan($path) {
   return @array_diff(@scandir($path),array(".",".."));
 }
+
+#######################################
+#                                     #
+# Function to set SMB to be read-only #
+#                                     #
+#######################################
+
+function smbReadOnly() {
+  global $ransomwarePaths;
+
+  logger("Setting SMB to read-only mode");
+  copy("/etc/samba/smb-shares.conf",$ransomwarePaths['smbShares']);
+  $smb = explode("\n",file_get_contents("/etc/samba/smb-shares.conf"));
+  foreach ($smb as $smbLine) {
+    $smbLineNew = trim($smbLine);
+    if ( startsWith($smbLineNew,"writeable") ) {
+      $smbLineNew = "writeable = no";
+    }
+    if ( startsWith($smbLineNew,"write list") ) {
+      $smbLineNew = "";
+    }
+    $newSMB .= $smbLineNew."\n";
+  }
+  file_put_contents("/etc/samba/smb-shares.conf",$newSMB);
+  exec("/etc/rc.d/rc.samba restart");
+}
+
 ?>
