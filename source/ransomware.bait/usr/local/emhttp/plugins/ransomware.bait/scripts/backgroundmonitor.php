@@ -188,7 +188,6 @@ while ( true ) {
   }
   $settings = readJsonFile($ransomwarePaths['settings']);
   if ( $settings['stopArray'] == 'true' ) {
-    rename($ransomwarePaths['smbShares'],"/etc/samba/smb-shares.conf");
     exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopArray.sh");
     break;
   }
