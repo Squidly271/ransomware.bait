@@ -8,6 +8,7 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 $inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
 $smbReadOnlyMode = is_file($ransomwarePaths['smbShares']) ? "true" : "false";
 $smbHistory = is_file($ransomwarePaths['smbStatusFile']) ? "true" : "false";
+$running = is_file($ransomwarePaths['PID']) ? "true" : "false";
 
 $settings = json_decode(@file_get_contents("/boot/config/plugins/ransomware.bait/settings.json"),true);
 if ( ! $settings['enableService'] ) { $settings['enableService'] = "false"; }  
@@ -47,6 +48,14 @@ $(function() {
   if ( '<?=$smbHistory?>' == "true" ) {
     $("#smbHistory").show();
   }
+  setInterval(function() {
+    $.post(URL,{action:'getStatus'}, function(data) {
+      if (data) {
+        $("#running").html(data);
+      }
+    });
+  },1000);
+  
   
   if ( '<?=$smbReadOnlyMode?>' == "true" ) {
     $("#setReadOnlyMode").hide();
@@ -124,7 +133,8 @@ function viewHistory() {
 
 </script>
 <span id='settingsScript'><?=$settingsOutput?></span>
-This detection plugin creates so-called "bait" files either within all folders of a share or only within the root rolder of each share (note that any appdata folder is specifically excluded)  If those files should change (ie: become encrypted) or if they are deleted/renamed (which seems to be how most ransomware malware operates), then SMB will be immediately stopped to prevent further encryption to your files)<br>In the unlikely event of a naming conflict between the bait files and pre-existing files already on the array, the original files will not be touched, and they will not be monitored for changes<br><br>
+<font size='3'>Background Monitor Status: <span id='running'></span></font>
+<br><br>This detection plugin creates so-called "bait" files either within all folders of a share or only within the root rolder of each share (note that any appdata folder is specifically excluded)  If those files should change (ie: become encrypted) or if they are deleted/renamed (which seems to be how most ransomware malware operates), then SMB will be immediately stopped to prevent further encryption to your files)<br>In the unlikely event of a naming conflict between the bait files and pre-existing files already on the array, the original files will not be touched, and they will not be monitored for changes<br><br>
 
 <table>
 <tr>
