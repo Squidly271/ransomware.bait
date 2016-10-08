@@ -9,13 +9,18 @@ file_put_contents($ransomwarePaths['stoppingService'],"stopping");
 $pid = @file_get_contents($ransomwarePaths['PID']);
 if ($pid) {
   logger("Stopping the ransomware protection service");
-  exec("kill -9 $pid");
+  exec("kill -9 $pid > /dev/null 2>&1");
 } else {
   logger("Ransomware protection service not running");
 }
 @unlink($ransomwarePaths['PID']);
 
-$filelist = @file_get_contents($ransomwarePaths['filelist']); 
+# if the tmp file exists, service is being stopped prior to completion, so save the damn file so that the bait doesn't get orphaned
+if ( is_file("/tmp/ransomware/filelist") ) {
+  copy("/tmp/ransomware/filelist",$ransomwarePaths['filelist']);
+}
+
+/* $filelist = @file_get_contents($ransomwarePaths['filelist']); 
 if ( $filelist ) {
   logger("Deleting previously set ransomware bait files");
   $allFiles = explode("\n",$filelist);
@@ -30,6 +35,6 @@ if ( $filelist ) {
   unlink("/boot/config/plugins/ransomware.bait/filelist");
 } else {
   logger("No bait files were found");
-}
+} */
 @unlink($ransomwarePaths['stoppingService']);
 ?>

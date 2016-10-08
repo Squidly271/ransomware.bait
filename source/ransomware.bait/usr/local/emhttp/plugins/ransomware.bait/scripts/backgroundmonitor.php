@@ -7,8 +7,8 @@ function stopEverything($path) {
   global $settings, $ransomwarePaths;
   
   exec("/usr/bin/smbstatus",$output);
-  if ( ( $settings['readOnlySMB'] ) { exec("/etc/rc.d/rc.samba stop"); }
-  if ( ( $settings['readOnlyAFP'] ) { exec("/etc/rc.d/rc.atalk stop"); }
+  if ( $settings['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
+  if ( $settings['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
   if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
     smbReadOnly();
   }
@@ -161,6 +161,8 @@ while ( true ) {
   createBait($userBase);
   exec("mkdir -p /boot/config/plugins/ransomware.bait");
   copy("/tmp/ransomware/filelist","/boot/config/plugins/ransomware.bait/filelist");
+  @unlink("/tmp/ransomware/filelist");
+  
   if ( $errorBait ) {
     logger("The following bait files could not be created");
     foreach ($errorBait as $error) {
@@ -168,10 +170,18 @@ while ( true ) {
     }
   }
   logger("Total bait files created: $totalBait");
+# check for available # of max_user_watches
+
+  $totalWatches = explode(" ",exec("cat /proc/sys/fs/inotify/max_user_watches"));
+  if ( ($totalBait * 3) > $totalWatches[0] ) {
+    logger("Increasing inotify_max_user_watches to ".$totalBait * 3);
+    file_put_contents("/proc/sys/fs/inotify/max_user_watches", $totalBait * 3);
+  }
+
   logger("Starting Background Monitoring Of Bait Files");
   while ( true ) {
     @unlink("/tmp/ransomware/event");
-    exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']);
+    exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']." 2>>/var/log/syslog");
     if ( is_file($ransomwarePaths['stoppingService']) ) {
       unlink($ransomwarePaths['stoppingService']);
       exit;

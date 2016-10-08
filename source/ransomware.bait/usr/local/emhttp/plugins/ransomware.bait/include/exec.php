@@ -23,6 +23,16 @@ switch ($_POST['action']) {
       exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh");
     } else {
       exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php");
+      logger("Deleting previously set ransomware bait files");
+      $filelist = @file_get_contents("/boot/config/plugins/ransomware.bat/filelist");
+      if ( $filelist ) {
+        $allfiles = explode("\n",$filelist);
+        foreach ( $allfiles as $baitFile) {
+          @unlink($baitfile);
+          ++$totalFiles;
+        }
+        logger("$totalFiles Bait Files Deleted");
+      }
     }
     echo "done";
     break;
@@ -34,6 +44,7 @@ switch ($_POST['action']) {
     exec("mkdir -p /boot/config/shares");
     exec("cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares");
     exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackup");
+    copy("/boot/config/plugins/ransomware.bait/shareBackupDisk")
     @unlink($ransomwarePaths['detected']); # also kill the event
     exec("/etc/rc.d/rc.samba stop");
     break;

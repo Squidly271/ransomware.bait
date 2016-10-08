@@ -45,7 +45,9 @@ The 'post-install' script
 <FILE Run="/bin/bash">
 <INLINE>
 rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version;')
+echo "Stopping the service and deleting pre-existing bait files.  This may take a bit"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
+echo "Restarting the background service"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh
 echo "--------------------------------"
 echo "Ransomware Protection Installed"
