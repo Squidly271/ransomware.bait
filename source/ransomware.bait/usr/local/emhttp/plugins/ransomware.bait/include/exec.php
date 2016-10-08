@@ -27,14 +27,15 @@ switch ($_POST['action']) {
     echo "done";
     break;
   case 'resetSMBPermissions':
-    if ( ! is_file($ransomwarePaths['smbShares']) ) { break; }
+    if ( ! is_dir($ransomwarePaths['shareBackup']) ) { break; }
     logger("Resetting SMB permissions to normal per user selection");
     rename($ransomwarePaths['smbShares'],"/etc/samba/smb-shares.conf");
     exec("rm -rf /boot/config/shares");
     exec("mkdir -p /boot/config/shares");
     exec("cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares");
+    exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackup");
     @unlink($ransomwarePaths['detected']); # also kill the event
-    exec("/etc/rc.d/rc.samba restart");
+    exec("/etc/rc.d/rc.samba stop");
     break;
   case 'setReadOnly':
     smbReadOnly();
@@ -45,6 +46,17 @@ switch ($_POST['action']) {
     } else {
       echo "<font color='red'>Not Running</font>";
     }
+    break;
+  case 'getAttackStatus':
+    if ( is_dir($ransomwarePaths['shareBackup']) ) {
+      $attack = @file_get_contents($ransomwarePaths['detected']);
+      if ( ! $attack ) {
+        $attack = "user";
+      }
+    } else {
+      $attack = "ok";
+    }
+    echo $attack;
     break;
 }
 ?>

@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2016.10.06">
-<!ENTITY md5       "35da3d8645988b2bc0192a8a32ffc29b">
+<!ENTITY version   "2016.10.07">
+<!ENTITY md5       "35ea1616eeaee81b1ecf2ee709d5916d">
 <!ENTITY launch    "Settings/ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
@@ -13,6 +13,12 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2016.10.07###
+- Beta: Stop AFP along with SMB
+- Added: Realtime popups of status within Ransomware's Settings/ransomware
+- Enhanced: Faster Stopping of SMB
+- Fixed: An attack followed by a reboot wouldn't let you restore proper permissions
+
 ###2016.10.06###
 - Add in PDF bait file
 - Add in SMB Readonly mode option
@@ -38,6 +44,7 @@ The 'post-install' script
 -->
 <FILE Run="/bin/bash">
 <INLINE>
+rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version;')
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
 /usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh
 echo "--------------------------------"

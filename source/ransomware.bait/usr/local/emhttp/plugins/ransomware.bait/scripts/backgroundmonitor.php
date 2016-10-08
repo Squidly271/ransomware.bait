@@ -8,6 +8,8 @@ function stopEverything($path) {
   
   exec("/usr/bin/smbstatus",$output);
   if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") ) {
+    exec("/etc/rc.d/rc.samba stop");    
+    exec("/etc/rc.d/rc.atalk stop");
     smbReadOnly();
   }
 /*   if ( $settings['stopSMB'] ) {

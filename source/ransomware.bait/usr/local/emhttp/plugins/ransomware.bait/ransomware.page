@@ -6,9 +6,7 @@ Title="Ransomware Protection"
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 $inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
-$smbReadOnlyMode = is_file($ransomwarePaths['smbShares']) ? "true" : "false";
 $smbHistory = is_file($ransomwarePaths['smbStatusFile']) ? "true" : "false";
-$running = is_file($ransomwarePaths['PID']) ? "true" : "false";
 
 $settings = json_decode(@file_get_contents("/boot/config/plugins/ransomware.bait/settings.json"),true);
 if ( ! $settings['enableService'] ) { $settings['enableService'] = "false"; }  
@@ -26,6 +24,7 @@ $event = trim(@file_get_contents($ransomwarePaths['detected']));
 ?>
 <script>
 var URL = "/plugins/ransomware.bait/include/exec.php";
+var attackInterval = 0;
 
 $(function() {
   $('#enableService').val('<?=$settings['enableService']?>');
@@ -55,28 +54,32 @@ $(function() {
       }
     });
   },1000);
-  
-  
-  if ( '<?=$smbReadOnlyMode?>' == "true" ) {
-    $("#setReadOnlyMode").hide();
-    resetSMBPermissions();
-  } else {
-    if ( '<?=$event?>' ) {
-      swal({
-        title: "<font color='red'>Possible Ransomware Attack</font>",
-        text: "<font color='red'><?=$event?></font> has been deleted or modified (either way possibly encrypted).",
-        type: "error",
-        html: true
-      });
-    }
-  }
+  listenForAttack();
 });
 
-function resetSMBPermissions() {
+function listenForAttack() {
+  attackInterval = setInterval(function() {
+    attack();
+  },1000);
+}
 
-  var title = "<font color='red'>SMB in Read-Only Mode";
-  var text  =  "SMB has been set to be in read-only mode due to a <font color='red'>possible attack</font> or <em>User Selection</em>.  You can choose to reset the SMB permissions by clicking below.  If this was caused by an attack, it is not advised to reset permission to normal";
-  
+function attack() {
+  $.post(URL,{action:'getAttackStatus'}, function(data) {
+    if ( data != "ok" ) {
+      $("#setReadOnlyMode").hide();
+      clearInterval(attackInterval);
+      resetSMBPermissions(data);
+    }
+  });
+}
+function resetSMBPermissions(reason) {
+  if ( ! reason || reason == "user" ) {
+    var title = "<font color='red'>SMB in Read-Only Mode";
+    var text  =  "SMB has been set to be in read-only mode due to a <font color='red'>possible attack</font> or <em>User Selection</em>.  You can choose to reset the SMB permissions by clicking below.  If this was caused by an attack, it is not advised to reset permission to normal";
+  } else {
+    var title = "<font color='red'>Attack Detected";
+    var text  = "SMB has been set to be in read-only mode due to a <font color='red'>possible attack</font> on "+reason+"You can choose to reset the SMB permissions by clicking below.  If this was caused by an attack, it is not advised to reset permission to normal";
+  }
   $("#readOnlyMode").show();
   swal({
     title: title,
@@ -95,6 +98,7 @@ function resetSMBPermissions() {
       $("#setReadOnlyMode").show();
       $.post(URL,{action:'resetSMBPermissions'});
       swal("Permissions Reset","The SMB permissions have been reset back to their normal values.  There will be an interruption in access to the server for a few moments","success");
+      listenForAttack();
     }
   });
 }

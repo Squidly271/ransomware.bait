@@ -9,5 +9,6 @@ $ransomwarePaths['smbShares'] = "/tmp/ransomware/smbShares-orig";
 $ransomwarePaths['readOnlyReason'] = "/tmp/ransomware/readOnlyReason";
 $ransomwarePaths['stoppingService'] = "/tmp/ransomware/stoppingService";
 $ransomwarePaths['smbStatusFile'] = "/boot/config/plugins/ransomware.bait/smbStatusFile.txt";
+$ransomwarePaths['shareBackup'] = "/boot/config/plugins/ransomware.bait/shareBackup";
 
 ?>
