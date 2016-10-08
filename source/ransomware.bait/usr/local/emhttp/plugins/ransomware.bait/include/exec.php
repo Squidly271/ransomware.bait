@@ -38,6 +38,8 @@ switch ($_POST['action']) {
     exec("/etc/rc.d/rc.samba stop");
     break;
   case 'setReadOnly':
+    $settings['readOnlySMB'] = "true";
+    $settings['readOnlyAFP'] = "true";
     smbReadOnly();
     break;
   case 'getStatus':

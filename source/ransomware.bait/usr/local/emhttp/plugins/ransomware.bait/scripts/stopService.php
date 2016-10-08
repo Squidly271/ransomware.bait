@@ -3,6 +3,7 @@
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 
+exec("mkdir -p /tmp/ransomware/");
 file_put_contents($ransomwarePaths['stoppingService'],"stopping");
 @unlink($ransomwarePaths['detected']);
 $pid = @file_get_contents($ransomwarePaths['PID']);
@@ -30,4 +31,5 @@ if ( $filelist ) {
 } else {
   logger("No bait files were found");
 }
+@unlink($ransomwarePaths['stoppingService']);
 ?>

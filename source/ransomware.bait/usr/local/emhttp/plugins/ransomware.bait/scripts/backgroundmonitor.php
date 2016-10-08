@@ -7,9 +7,9 @@ function stopEverything($path) {
   global $settings, $ransomwarePaths;
   
   exec("/usr/bin/smbstatus",$output);
-  if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") ) {
-    exec("/etc/rc.d/rc.samba stop");    
-    exec("/etc/rc.d/rc.atalk stop");
+  if ( ( $settings['readOnlySMB'] ) { exec("/etc/rc.d/rc.samba stop"); }
+  if ( ( $settings['readOnlyAFP'] ) { exec("/etc/rc.d/rc.atalk stop"); }
+  if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
     smbReadOnly();
   }
 /*   if ( $settings['stopSMB'] ) {

@@ -16,6 +16,7 @@ if ( ! $settings['stopNFS'] )       { $settings['stopNFS'] = "true"; }
 if ( ! $settings['stopAFP'] )       { $settings['stopAFP'] = "true"; }
 if ( ! $settings['stopArray'] )     { $settings['stopArray'] = "true";}
 if ( ! $settings['readOnlySMB'] )   { $settings['readOnlySMB'] = "true"; }
+if ( ! $settings['readOnlyAFP'] )   { $settings['readOnlyAFP'] = "true"; }
 if ( ! $settings['unRaidPort'] )    { $settings['unRaidPort'] = 80; }
 if ( ! $settings['excludeAppdata'] ) { $settings['excludeAppdata'] = 'true'; }
   
@@ -34,6 +35,7 @@ $(function() {
   $('#stopAFP').val('<?=$settings['stopAFP']?>');
   $('#stopArray').val('<?=$settings['stopArray']?>');
   $('#readOnlySMB').val('<?=$settings['readOnlySMB']?>');
+  $('#readOnlyAFP').val('<?=$settings['readOnlyAFP']?>');
   $('#unRaidPort').val('<?=$settings['unRaidPort']?>');
   $('#excludeAppdata').val('<?=$settings['excludeAppdata']?>');
   
@@ -171,6 +173,13 @@ function viewHistory() {
     <option value='false'>No</option>
   </td>
 </tr>
+<tr>
+  <td><b>Set AFP to be read-only on detection</b></td>
+  <td><select class='settings' id='readOnlyAFP' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+  </td>
+</tr>
 <!-- <tr>
   <td><b>Stop SMB on Detection</b></td>
   <td><select class='settings' id='stopSMB' onchange='enableApply();'>
@@ -213,7 +222,7 @@ function viewHistory() {
 <input type='button' id='done' value='Done' onclick='done();'>
 <br><br><br>
 
-<div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/lock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Set Immediately Set SMB to Be Read-Only</font></figcaption></figure></center></div>
+<div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/lock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Immediately Set SMB/AFP to Be Read-Only</font></figcaption></figure></center></div>
 <div id='readOnlyMode' style='display:none'><center><font size='3' color='red'>SMB RUNNING IN READ-ONLY MODE.  Click <a onclick='resetSMBPermissions();' style='cursor:pointer'>HERE</a> to reset the permissions</font></center><br><br></div>
 <div id='smbHistory' style='display:none'><a onclick='viewHistory();' style='cursor:pointer'>Click here to display the attack history</a></div>
 <center>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a></center>
