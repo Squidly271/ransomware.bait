@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2016.10.07">
-<!ENTITY md5       "35ea1616eeaee81b1ecf2ee709d5916d">
+<!ENTITY version   "2016.10.09">
+<!ENTITY md5       "7ac5e526a78e41c2e5338cecc32bc0ca">
 <!ENTITY launch    "Settings/ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
@@ -13,9 +13,18 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2016.10.09###
+- Added: Separate read-only SMB & AFP Settings
+- Added: Disk shares now set to be read-only
+- Added: Check and increase inotify watches if required
+- Changed: Deletion of bait files now only happens when service starts up
+- Added: Log when inotifywait is actually ready, willing, and able
+- Fixed: Remove possibility of orphaned bait files on reboots
+- Added: Ability to exclude folders
+
 ###2016.10.07###
 - Beta: Stop AFP along with SMB
-- Added: Realtime popups of status within Ransomware's Settings/ransomware
+- Added: Realtime popups of status within Ransomware's Settings
 - Enhanced: Faster Stopping of SMB
 - Fixed: An attack followed by a reboot wouldn't let you restore proper permissions
 
