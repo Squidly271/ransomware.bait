@@ -1,10 +1,12 @@
 <?PHP
-
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
 
 require_once("/usr/local/emhttp/plugins/dynamix/include/Wrappers.php");
 require_once("/usr/local/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php");
-
-
 
 ###################################################################################
 #                                                                                 #
@@ -16,7 +18,7 @@ function randomFile($basePath) {
   global $communityPaths;
   while (true) {
     $filename = $basePath."/".mt_rand().".tmp";
-    if ( ! is_file($filename) ) {
+    if ( ! isfile($filename) ) {
       break;
     }
   }
@@ -51,7 +53,7 @@ function findAppdata($volumes) {
   $defaultShareName = basename($dockerOptions['DOCKER_APP_CONFIG_PATH']);
   $shareName = str_replace("/mnt/user/","",$defaultShareName);
   $shareName = str_replace("/mnt/cache/","",$defaultShareName);
-  if ( ! is_file("/boot/config/shares/$shareName.cfg") ) { 
+  if ( ! isfile("/boot/config/shares/$shareName.cfg") ) { 
     $shareName = "****";
   }
   file_put_contents("/tmp/test",$defaultShareName);
@@ -90,8 +92,6 @@ function notify($event,$subject,$description,$message,$type="normal") {
   shell_exec($command);
 }
 
-
-
 #########################################################
 #                                                       #
 # Returns an array of all of the appdata shares present #
@@ -99,7 +99,7 @@ function notify($event,$subject,$description,$message,$type="normal") {
 #########################################################
 
 function getAppData() {
-  $dockerRunning = is_dir("/var/lib/docker/tmp");
+  $dockerRunning = isdir("/var/lib/docker/tmp");
   $excludedShares = array();
   
   if ( $dockerRunning ) {
@@ -126,7 +126,7 @@ function getAppData() {
     $excludedShares[$pathinfo[0]] = $pathinfo[0];
   }
   
-  if ( is_file("/boot/config/plugins/community.applications/BackupOptions.json") ) {
+  if ( isfile("/boot/config/plugins/community.applications/BackupOptions.json") ) {
     $backupOptions = readJsonFile("/boot/config/plugins/community.applications/BackupOptions.json");
     $backupDestination = $backupOptions['destinationShare'];
     $backupShare = explode("/",$backupDestination);
@@ -142,6 +142,7 @@ function getAppData() {
 #################################################################
 
 function startsWith($haystack, $needle) {
+  if ( ( ! $needle ) || ( ! $haystack ) ) { return false; }
   return $needle === "" || strripos($haystack, $needle, -strlen($haystack)) !== FALSE;
 }
 
@@ -207,7 +208,7 @@ function smbReadOnly() {
   if ( ! $shareList ) { $shareList = array(); }
   foreach ($shareList as $share) {
     $shareSettings = parse_ini_file("/boot/config/shares/$share");
-    $shareSettings['shareComment'] = "READ-ONLY Share Settings created by Ransomware Protection.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
+    $shareSettings['shareComment'] = "Read Only Mode.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
 # smb
     if ( $settings['readOnlySMB'] == "true" ) {
       if ( $shareSettings['shareWriteList'] ) {
@@ -240,7 +241,7 @@ function smbReadOnly() {
   $shareSettings = parse_ini_file["/boot/config/disk.cfg"];
 
   for ($disk = 1; $disk <= 28; $disk++) {
-    $shareSettings["diskComment.$disk"] = "READ-ONLY Share Settings created by Ransomware Protection.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
+    $shareSettings["diskComment.$disk"] = "Read Only Mode.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
 #smb
     if ( $settings['readOnlySMB'] == "true" ) {
       if ( $shareSettings["diskWriteList.$disk"] ) {
@@ -265,6 +266,7 @@ function smbReadOnly() {
     }
   }
 #handle the cache drive
+  $shareSettings["cacheComment"] = "Read Only Mode.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
 #smb
   if ( $settings['readOnlySMB'] == "true" ) {
     if ( $shareSettings["cacheWriteList"] ) {
@@ -301,6 +303,21 @@ function createIniFile($shareSettings) {
     $newSettings .= $cfgSetting.'="'.$shareSettings[$cfgSetting].'"'."\r\n";
   }
   return $newSettings;
+}
+
+###############################################################################
+#                                                                             #
+# 2 functions to avoid PHP caching results that could throw things for a loop #
+#                                                                             #
+###############################################################################
+
+function isfile($filename) {
+  clearstatcache();
+  return is_file($filename);
+}
+function isdir($path) {
+  clearstatcache();
+  return is_dir($path);
 }
 
 ?>

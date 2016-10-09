@@ -1,4 +1,10 @@
 <?PHP
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
+
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 
@@ -23,28 +29,19 @@ switch ($_POST['action']) {
       exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh");
     } else {
       exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php");
-      logger("Deleting previously set ransomware bait files");
-      $filelist = @file_get_contents("/boot/config/plugins/ransomware.bat/filelist");
-      if ( $filelist ) {
-        $allfiles = explode("\n",$filelist);
-        foreach ( $allfiles as $baitFile) {
-          @unlink($baitfile);
-          ++$totalFiles;
-        }
-        logger("$totalFiles Bait Files Deleted");
-      }
+      exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
     }
     echo "done";
     break;
   case 'resetSMBPermissions':
-    if ( ! is_dir($ransomwarePaths['shareBackup']) ) { break; }
+    if ( ! isdir($ransomwarePaths['shareBackup']) ) { break; }
     logger("Resetting SMB permissions to normal per user selection");
     rename($ransomwarePaths['smbShares'],"/etc/samba/smb-shares.conf");
     exec("rm -rf /boot/config/shares");
     exec("mkdir -p /boot/config/shares");
     exec("cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares");
     exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackup");
-    copy("/boot/config/plugins/ransomware.bait/shareBackupDisk")
+    copy("/boot/config/plugins/ransomware.bait/shareBackupDisk");
     @unlink($ransomwarePaths['detected']); # also kill the event
     exec("/etc/rc.d/rc.samba stop");
     break;
@@ -54,14 +51,14 @@ switch ($_POST['action']) {
     smbReadOnly();
     break;
   case 'getStatus':
-    if ( is_file($ransomwarePaths['PID']) ) {
+    if ( isfile($ransomwarePaths['PID']) ) {
       echo "<font color='green'>Running</font>";
     } else {
       echo "<font color='red'>Not Running</font>";
     }
     break;
   case 'getAttackStatus':
-    if ( is_dir($ransomwarePaths['shareBackup']) ) {
+    if ( isdir($ransomwarePaths['shareBackup']) ) {
       $attack = @file_get_contents($ransomwarePaths['detected']);
       if ( ! $attack ) {
         $attack = "user";

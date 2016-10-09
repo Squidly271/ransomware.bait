@@ -3,7 +3,22 @@ Icon="lock.png"
 Title="Ransomware Protection"
 ---
 <?
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
+
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/rpCredits.php");
+
+$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
+if ( is_file("/tmp/plugins/community.applications.plg") ) {
+  $upgradeVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /tmp/plugins/ransomware.bait.plg");
+} else {
+  $upgradeVersion = "0";
+}
+$upgradeAvailable = ($installedVersion < $upgradeVersion) ? "true" : "false";
 
 $inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
 $smbHistory = is_file($ransomwarePaths['smbStatusFile']) ? "true" : "false";
@@ -23,11 +38,25 @@ if ( ! $settings['excludeAppdata'] ) { $settings['excludeAppdata'] = 'true'; }
 $event = trim(@file_get_contents($ransomwarePaths['detected']));
 
 ?>
+<style>.fileTree{width:305px;max-height:150px;overflow:scroll;position:absolute;z-index:100;display:none;}</style>
+<link type="text/css" rel="stylesheet" href="/webGui/styles/jquery.filetree.css">
+<script src="/webGui/javascript/jquery.filetree.js"></script>
 <script>
 var URL = "/plugins/ransomware.bait/include/exec.php";
 var attackInterval = 0;
 
 $(function() {
+  if ( '<?=$upgradeAvailable?>' == "true" ) {
+    $("#upgradeAvailable").show();
+  }
+
+  $("#excludedFoldersList").fileTree({
+    root: "/mnt/user",
+    multiSelect: true,
+    filter: "HIDE_FILES_FILTER",
+    folderEvent: "nothing"
+  });
+
   $('#enableService').val('<?=$settings['enableService']?>');
   $('#folders').val('<?=$settings['folders']?>');
   $('#stopSMB').val('<?=$settings['stopSMB']?>');
@@ -38,6 +67,7 @@ $(function() {
   $('#readOnlyAFP').val('<?=$settings['readOnlyAFP']?>');
   $('#unRaidPort').val('<?=$settings['unRaidPort']?>');
   $('#excludeAppdata').val('<?=$settings['excludeAppdata']?>');
+  $('#excluded').val('<?=$settings['excluded']?>');
   
   if ( '<?=$inotifyInstalled?>' == 'false' ) {
     swal({
@@ -58,6 +88,28 @@ $(function() {
   },1000);
   listenForAttack();
 });
+
+function showCredits() {
+  myAlert("Ransomware Protection","<?=$rpCredits?>","/plugins/ransomware.bait/images/biglock.png","96x96", true, false, true);
+}
+
+function myAlert(description,textdescription,textimage,imagesize, outsideClick, showCancel, showConfirm, alertType) {
+  if ( !outsideClick ) outsideClick = false;
+  if ( !showCancel )   showCancel = false;
+  if ( !showConfirm )  showConfirm = false;
+  if ( imagesize == "" ) { imagesize = "80x80"; }
+  swal({
+    title: description,
+    text: textdescription,
+    imageUrl: textimage,
+    imageSize: imagesize,
+    allowOutsideClick: outsideClick,
+    showConfirmButton: showConfirm,
+    showCancelButton: showCancel,
+    type: alertType,
+    html: true
+  });
+}
 
 function listenForAttack() {
   attackInterval = setInterval(function() {
@@ -132,20 +184,39 @@ function apply() {
     }
   });
 }
+function setExcluded() {
+				$el = $( "#excludedFoldersList input:checked" );
 
-function viewHistory() {
+				if( $el.length === 0 )
+				{
+					checked = "";
+				}
+				else {
+					var checked = $el
+						.map(function() {
+							return "/mnt/user/"+$(this).parent().find('a:first').text();
+						})
+						.get()
+						.join(',');
+						}
+    $("#excluded").val(checked);
+    enableApply();
+ }
+
+ function viewHistory() {
   openBox("/plugins/ransomware.bait/scripts/showHistory.php","Attack History",550,1100);
 }
 
 </script>
+<div id='upgradeAvailable' style='display:none'><center><a href='/Plugins'><font color='red'>An upgrade to this plugin is available</font></a></center><br></div>
 <span id='settingsScript'><?=$settingsOutput?></span>
-<font size='3'>Background Monitor Status: <span id='running'></span></font>
+<font size='3'>Background Monitor Status: <span id='running'></span></font><a style='float:right;cursor:pointer' onclick='showCredits();'>Credits</a>
 <br><br>This detection plugin creates so-called "bait" files either within all folders of a share or only within the root rolder of each share (note that any appdata folder is specifically excluded)  If those files should change (ie: become encrypted) or if they are deleted/renamed (which seems to be how most ransomware malware operates), then SMB will be immediately stopped to prevent further encryption to your files)<br>In the unlikely event of a naming conflict between the bait files and pre-existing files already on the array, the original files will not be touched, and they will not be monitored for changes<br><br>
 
 <table>
 <tr>
   <td width=25%><b>Enable Ransomware Bait Service</b></td>
-  <td><select class='settings' id='enableService' onchange='enableApply();'>
+  <td width=25%><select class='settings' id='enableService' onchange='enableApply();'>
     <option value='false'>No</option>
     <option value='true'>Yes</option>
   </td>
@@ -155,14 +226,6 @@ function viewHistory() {
   <td><select class='settings' id='folders' onchange='enableApply();'>
     <option value='root'>Root only of shares</option>
     <option value='all'>All folders of shares</option>
-    </select>
-  </td>
-</tr>
-<tr>
-  <td><b>Exclude AppData Folders</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded</td>
-  <td><select class='settings' id='excludeAppdata' onchange='enableApply();'>
-    <option value='true'>Yes</option>
-    <option value='false'>No</option>
     </select>
   </td>
 </tr>
@@ -180,30 +243,6 @@ function viewHistory() {
     <option value='false'>No</option>
   </td>
 </tr>
-<!-- <tr>
-  <td><b>Stop SMB on Detection</b></td>
-  <td><select class='settings' id='stopSMB' onchange='enableApply();'>
-    <option value='true'>Yes</option>
-    <option value='false'>No</option>
-    </select>
-  </td>
-</tr>
-<tr>
-  <td><b>Stop NFS on Detection</b></td>
-  <td><select class='settings' id='stopNFS' onchange='enableApply();'>
-    <option value='true'>Yes</option>
-    <option value='false'>No</option>
-    </select>
-  </td>
-</tr>
-<tr>
-  <td><b>Stop AFP on Detection</b></td>
-  <td><select class='settings' id='stopAFP' onchange='enableApply();'>
-    <option value='true'>Yes</option>
-    <option value='false'>No</option>
-    </select>
-  </td>
-</tr> -->
 <tr>
   <td><b>Stop Array on Detection</b></td>
   <td><select class='settings' id='stopArray' onchange='enableApply();'>
@@ -213,17 +252,25 @@ function viewHistory() {
   </td>
 </tr>
 <tr>
-  <td><b>unRaid's Listening Port</b></td>
-  <td><input type='number' id='unRaidPort' class='settings' width="50" onchange='enableApply();'></td>
+  <td><b>Exclude AppData Shares</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded</td>
+  <td><select class='settings' id='excludeAppdata' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Additional Excluded Shares:</b></td>
+  <td><input type='text' class='settings' id='excluded' value='<?=$backupOptions['excluded']?>' onchange='enableApply();'></span></td>
+  <td width=20%><center><b>Excluded Share Browser</b><br><input type='button' value='Exclude Selected' onclick='setExcluded();'><br></center><div id='excludedFoldersList' style='width:305px;max-height:150px;overflow:scroll;position:absolute;z-index:100;'></div><br><center></td>
 </tr>
 </table>
 
 <input type='button' id='apply' value='Apply' disabled onclick='apply();'>
 <input type='button' id='done' value='Done' onclick='done();'>
-<br><br><br>
 
-<div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/lock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Immediately Set SMB/AFP to Be Read-Only</font></figcaption></figure></center></div>
+<div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/biglock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Immediately Set SMB/AFP to Be Read-Only</font></figcaption></figure></center></div>
 <div id='readOnlyMode' style='display:none'><center><font size='3' color='red'>SMB RUNNING IN READ-ONLY MODE.  Click <a onclick='resetSMBPermissions();' style='cursor:pointer'>HERE</a> to reset the permissions</font></center><br><br></div>
 <div id='smbHistory' style='display:none'><a onclick='viewHistory();' style='cursor:pointer'>Click here to display the attack history</a></div>
-<center>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a></center>
+<center><b>Ransomware Protection version: <?=$installedVersion?></b><br>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a></center>
 <a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7M7CBCVU732XG' target='_blank'><img style='position: fixed; bottom: 50px; right: 50px;' src='/plugins/ransomware.bait/images/donate.gif'></a>

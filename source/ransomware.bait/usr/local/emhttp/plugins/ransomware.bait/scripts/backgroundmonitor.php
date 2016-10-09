@@ -1,5 +1,11 @@
 #!/usr/bin/php
 <?PHP
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
+
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
@@ -44,7 +50,7 @@ function stopEverything($path) {
 
 
 function createBait($path) {
-  global $settings,$appdata, $root, $rootContents, $totalBait, $errorBait;
+  global $settings,$appdata, $root, $rootContents, $totalBait, $errorBait, $excludedShares;
   
   $contents = scan($path);
 
@@ -53,15 +59,26 @@ function createBait($path) {
     if ($appdata[$test]) {
       continue;
     }
-    if ( (is_dir("$path/$entry")) && ( $settings['folders'] != "root" ) ) {
+    $flag = false;
+    foreach ($excludedShares as $excluded) {
+      $excluded = rtrim($excluded,"/");
+      if ( $excluded == "$path/$entry" ) {
+        $flag = true;
+        break;
+      }
+    }
+    if ( $flag ) {
+      continue;
+    }
+    if ( (isdir("$path/$entry")) && ( $settings['folders'] != "root" ) ) {
       createBait("$path/$entry");
     }
-    if ( is_file("$path/$entry") ) {
+    if ( isfile("$path/$entry") ) {
       continue;
     }
 
     foreach ($rootContents as $baitFile) {
-      if ( is_file("$path/$entry/$baitFile") ) {
+      if ( isfile("$path/$entry/$baitFile") ) {
         $errorBait[] = "$path/$entry/$baitFile";
         continue;
       }
@@ -78,8 +95,16 @@ function createBait($path) {
     }
   }
 }
+
+
+
+
+
+
+
 $unRaidVars = parse_ini_file("/var/local/emhttp/var.ini");
-if ( strtolower($unRaidVars['mdState']) == "stopped" ) {
+if ( strtolower($unRaidVars['mdState']) != "started" ) {
+  logger("Array Not Started.  Exiting");
   exit;
 }
 $settings = readJsonFile($ransomwarePaths['settings']);
@@ -97,16 +122,17 @@ if ( ! $settings['readOnlySMB'] )   { $settings['readOnlySMB'] = "true"; }
 if ( ! $settings['unRaidPort'] )    { $settings['unRaidPort'] = 80; }
 if ( ! $settings['excludeAppdata'] ) { $settings['excludeAppdata'] = 'true'; }
 
-if ( ! is_file("/usr/bin/inotifywait") ) {
+if ( ! isfile("/usr/bin/inotifywait") ) {
   logger("inotify tools not installed.  Install it via NerdPack plugin available within Community Applications");
   notify("Ransomware Protection","inotify-tools not installed","inotify tools must be installed (via NerdPack plugin) for this plugin to operate","","warning");
   exit;
 }
-
-if ( is_file($ransomwarePaths['PID']) ) {
+clearstatcache();
+if ( isfile($ransomwarePaths['PID']) ) {
   logger("ransomware protection appears to be already running");
   exit;
 }
+
 exec("mkdir -p /tmp/ransomware/");
 @unlink($ransomwarePaths['stoppingService']);
 @unlink($ransomwarePaths['event']);
@@ -116,25 +142,24 @@ exec("mkdir -p /tmp/ransomware/");
 $pid = getmypid();
 file_put_contents($ransomwarePaths['PID'],$pid);
 while ( true ) {
-  unset($totalDeleted);
-  $filelist = @file_get_contents($ransomwarePaths['filelist']);
-  if ( $filelist ) {
-    logger("Deleting previously set ransomware bait files");
-    $allFiles = explode("\n",$filelist);
-    foreach ($allFiles as $baitFile) {
-      if ( is_file($baitFile) ) {
-        ++$totalDeleted;
-#        echo "$baitFile\n";
-        unlink($baitFile);
-      }
-    }
-    logger("Deleted $totalDeleted bait files");
-    unlink("/boot/config/plugins/ransomware.bait/filelist");
+  if ( ! isfile($ransomwarePaths['deleteProgress']) ) {
+    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
+    sleep(5);
   }
-
+  while ( true ) {
+    if ( isfile($ransomwarePaths['deleteProgress']) ) {
+      logger("Waiting For deletion of bait files to complete");
+      sleep(30);
+      clearstatcache();
+    } else {
+      break;
+    }
+  }
+  
   if ( ($settings['excludeAppdata'] == 'true') || ($settings['folders'] != 'root') ) {
     $appdata = getAppData();
   }
+  $excludedShares = explode(",",$settings['excluded']);
   if ( scan("/boot/config/plugins/ransomware.bait/bait") ) {
     $root = "/boot/config/plugins/ransomware.bait/bait";
   } else {
@@ -153,11 +178,12 @@ while ( true ) {
   } else {
     logger("Creating bait files, all folders of all shares.  This may take a bit");
   }
-  if ( is_dir("/mnt/user") ) {
+  if ( isdir("/mnt/user") ) {
     $userBase = "/mnt/user";
   } else {
     $userBase = "/mnt";
   }
+  unset($errorBait);
   createBait($userBase);
   exec("mkdir -p /boot/config/plugins/ransomware.bait");
   copy("/tmp/ransomware/filelist","/boot/config/plugins/ransomware.bait/filelist");
@@ -182,19 +208,33 @@ while ( true ) {
   while ( true ) {
     @unlink("/tmp/ransomware/event");
     exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']." 2>>/var/log/syslog");
-    if ( is_file($ransomwarePaths['stoppingService']) ) {
+    $tmpEvent = @file_get_contents("/tmp/ransomware/event");
+    if ( ! trim($tmpEvent) ) {
+      logger("Something went wrong and inotify exited.  Exiting");
+      break;
+    }
+    if ( isfile($ransomwarePaths['stoppingService']) ) {
       unlink($ransomwarePaths['stoppingService']);
       exit;
     }      
     $affectedFile = trim(file_get_contents($ransomwarePaths['event']));
     file_put_contents($ransomwarePaths['detected'],$affectedFile);
-    if ( ! is_file($affectedFile) ) {
+    if ( ! isfile($affectedFile) ) {
       stopEverything($affectedFile);
       break;
     } else {
       if ( md5_file($affectedFile) != $md5Array[basename($affectedFile)] ) {
         stopEverything($affectedFile);
         break;
+      } else {
+        logger("Event on $affectedFile, but MD5 matches.  Checking again in 1 second");
+        sleep(1);
+        if ( md5_file($affectedFile) != $md5Array[basename($affectedFile)] ) {
+          stopEverything($affectedFile);
+          break;
+        } else {
+          logger("Event on $affectedFile, but MD5 matches.  Remonitoring");
+        }
       }
     } 
   }
