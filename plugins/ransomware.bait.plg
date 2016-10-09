@@ -74,6 +74,8 @@ The 'remove' script.
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
+echo "Deleting bait files.  This may take a bit"
+/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.php
 removepkg &name;-&version;-x86_64-1
 rm -rf &plugdir;
 rm -rf /boot/config/plugins/&name;
