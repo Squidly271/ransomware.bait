@@ -14,7 +14,7 @@
 
 <CHANGES>
 ###2016.10.09###
-- Added: Separate read-only SMB & AFP Settings
+- Added: Separate read-only SMB / AFP Settings
 - Added: Disk shares now set to be read-only
 - Added: Check and increase inotify watches if required
 - Changed: Deletion of bait files now only happens when service starts up
