@@ -51,11 +51,15 @@ switch ($_POST['action']) {
     smbReadOnly();
     break;
   case 'getStatus':
-    if ( isfile($ransomwarePaths['PID']) ) {
-      echo "<font color='green'>Running</font>";
-    } else {
-      echo "<font color='red'>Not Running</font>";
+    $message = @file_get_contents($ransomwarePaths['startupStatus']);
+    if ( ! $message ) {
+      if ( isfile($ransomwarePaths['PID']) ) {
+        $message =  "<font color='green'>Running</font>";
+      } else {
+        $message =  "<font color='red'>Not Running</font>";
+      }
     }
+    echo $message;
     break;
   case 'getAttackStatus':
     if ( isdir($ransomwarePaths['shareBackup']) ) {

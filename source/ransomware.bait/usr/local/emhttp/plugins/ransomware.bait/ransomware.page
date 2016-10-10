@@ -11,6 +11,12 @@ Title="Ransomware Protection"
 
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/rpCredits.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
+
+$appdataShares = getAppData();
+foreach ($appdataShares as $appdata) {
+  $appdataList .= "<b><font size='0' color='purple'>/mnt/user/$appdata</font></b><br>";
+}
 
 $installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
 if ( is_file("/tmp/plugins/community.applications.plg") ) {
@@ -252,7 +258,7 @@ function setExcluded() {
   </td>
 </tr>
 <tr>
-  <td><b>Exclude AppData Shares</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded</td>
+  <td><b>Exclude AppData Shares</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded<br><?=$appdataList?></td>
   <td><select class='settings' id='excludeAppdata' onchange='enableApply();'>
     <option value='true'>Yes</option>
     <option value='false'>No</option>

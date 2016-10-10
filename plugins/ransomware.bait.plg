@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2016.10.09">
-<!ENTITY md5       "7ac5e526a78e41c2e5338cecc32bc0ca">
+<!ENTITY version   "2016.10.10">
+<!ENTITY md5       "67ee4ba4ab8809e03967c2ef7baa814a">
 <!ENTITY launch    "Settings/ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
@@ -13,6 +13,9 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2016.10.10###
+- Minor Bug Fixes
+
 ###2016.10.09###
 - Added: Separate read-only SMB / AFP Settings
 - Added: Disk shares now set to be read-only

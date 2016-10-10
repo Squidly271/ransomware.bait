@@ -16,6 +16,6 @@ $ransomwarePaths['stoppingService'] = "/tmp/ransomware/stoppingService";
 $ransomwarePaths['smbStatusFile'] = "/boot/config/plugins/ransomware.bait/smbStatusFile.txt";
 $ransomwarePaths['shareBackup'] = "/boot/config/plugins/ransomware.bait/shareBackup";
 $ransomwarePaths['deleteProgress'] = "/tmp/ransomware/deleteProgress";
-
+$ransomwarePaths['startupStatus'] = "/tmp/ransomware/startupStatus";
 
 ?>

@@ -7,7 +7,18 @@
 #########################################################
 
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
-require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
+
+function logger($string) {
+  shell_exec('logger -i ransomware protection:"'.$string.'"');
+}
+function isfile($filename) {
+  clearstatcache();
+  return is_file($filename);
+}
+function isdir($path) {
+  clearstatcache();
+  return is_dir($path);
+}
 
 exec("mkdir -p /tmp/ransomware/");
 file_put_contents($ransomwarePaths['stoppingService'],"stopping");

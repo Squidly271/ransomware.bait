@@ -5,8 +5,6 @@
 #                                                       #
 #########################################################
 
-require_once("/usr/local/emhttp/plugins/dynamix/include/Wrappers.php");
-require_once("/usr/local/emhttp/plugins/dynamix.docker.manager/include/DockerClient.php");
 
 ###################################################################################
 #                                                                                 #
@@ -39,37 +37,6 @@ function writeJsonFile($filename,$jsonArray) {
   file_put_contents($filename,json_encode($jsonArray, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
 }
 
-##############################################################
-#                                                            #
-# Searches an array of docker mappings (host:container path) #
-# for a container mapping of /config and returns the host    #
-# path                                                       #
-#                                                            #
-##############################################################
-
-function findAppdata($volumes) {
-  $path = false;
-  $dockerOptions = @parse_ini_file("/boot/config/docker.cfg");
-  $defaultShareName = basename($dockerOptions['DOCKER_APP_CONFIG_PATH']);
-  $shareName = str_replace("/mnt/user/","",$defaultShareName);
-  $shareName = str_replace("/mnt/cache/","",$defaultShareName);
-  if ( ! isfile("/boot/config/shares/$shareName.cfg") ) { 
-    $shareName = "****";
-  }
-  file_put_contents("/tmp/test",$defaultShareName);
-  if ( is_array($volumes) ) {
-    foreach ($volumes as $volume) {
-      $temp = explode(":",$volume);
-      $testPath = strtolower($temp[1]);
-    
-      if ( (startsWith($testPath,"/config")) || (startsWith($temp[0],"/mnt/user/$shareName")) || (startsWith($temp[0],"/mnt/cache/$shareName")) ) {
-        $path = $temp[0];
-        break;
-      }
-    }
-  }
-  return $path;
-}
 
 ############################################
 #                                          #
@@ -78,7 +45,7 @@ function findAppdata($volumes) {
 ############################################
 
 function logger($string) {
-  shell_exec('logger ransomware protection:"'.$string.'"');
+  shell_exec('logger -i ransomware protection:"'.$string.'"');
 }
 
 ###########################################
@@ -99,24 +66,7 @@ function notify($event,$subject,$description,$message,$type="normal") {
 #########################################################
 
 function getAppData() {
-  $dockerRunning = isdir("/var/lib/docker/tmp");
   $excludedShares = array();
-  
-  if ( $dockerRunning ) {
-    $DockerClient = new DockerClient();
-    $info = $DockerClient->getDockerContainers();
-
-    foreach ($info as $docker) {
-      $appData = findAppData($docker['Volumes']);
-      if ( ! $appData ) {
-        continue;
-      }
-      $appData = str_replace("/mnt/cache/","/mnt/user/",$appData);
-      $appData = str_replace("/mnt/user/","",$appData);
-      $pathinfo = explode("/",$appData);
-      $excludedShares[$pathinfo[0]] = $pathinfo[0];
-    }
-  }  
   $dockerOptions = @parse_ini_file("/boot/config/docker.cfg");
   $sharename = $dockerOptions['DOCKER_APP_CONFIG_PATH'];
   if ( $sharename ) {
@@ -178,27 +128,6 @@ function smbReadOnly() {
   }
   $users = rtrim($users,",");
 
-  # this first bit resets the smb settings before unRaid fucks with them within a minute;
-  
-/*   logger("Setting SMB to read-only mode");
-  copy("/etc/samba/smb-shares.conf",$ransomwarePaths['smbShares']);
-  $smb = explode("\n",file_get_contents("/etc/samba/smb-shares.conf"));
-  foreach ($smb as $smbLine) {
-    $smbLineNew = trim($smbLine);
-    if ( startsWith($smbLineNew,"writeable") ) {
-      $smbLineNew = "read only = yes";
-    }
-    if ( startsWith($smbLineNew,"write list") ) {
-      continue;
-    }
-    if ( startsWith($smbLineNew,"public = yes") ) {
-      $smbLineNew = "public = yes\nread only = yes";
-    }
-    $newSMB .= $smbLineNew."\n";
-  }
-  file_put_contents("/etc/samba/smb-shares.conf",$newSMB);
-  exec("/etc/rc.d/rc.samba restart");
-   */
   # now change unRaid's settings to stop it fucking with them
   exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackup");
   exec("mkdir -p /boot/config/plugins/ransomware.bait/shareBackup");

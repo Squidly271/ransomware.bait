@@ -41,7 +41,9 @@ function stopEverything($path) {
   logger("..");
   logger("Possible Ransomware attack detected on file $path");
   logger("SMB Status:");
+  file_put_contents($ransomwarePaths['smbStatusFile'],"******************************************************************************************",FILE_APPEND);
   file_put_contents($ransomwarePaths['smbStatusFile'],"\r\n\r\nTime Of Attack:".date("r",time())."\r\n\r\n",FILE_APPEND);
+  file_put_contents($ransomwarePaths['smbStatusFile'],"Attacked File: $path\r\n\r\n",FILE_APPEND);
   foreach($output as $statusLine) {
     logger($statusLine);
     file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
@@ -127,7 +129,6 @@ if ( ! isfile("/usr/bin/inotifywait") ) {
   notify("Ransomware Protection","inotify-tools not installed","inotify tools must be installed (via NerdPack plugin) for this plugin to operate","","warning");
   exit;
 }
-clearstatcache();
 if ( isfile($ransomwarePaths['PID']) ) {
   logger("ransomware protection appears to be already running");
   exit;
@@ -174,10 +175,11 @@ while ( true ) {
   unset($totalBait);
   @unlink("/tmp/ransomware/filelist");
   if ( $settings['folders'] == "root" ) {
-    logger("Creating bait files, root of shares only");
+    $logMsg = "Creating bait files, root of shares only";
   } else {
-    logger("Creating bait files, all folders of all shares.  This may take a bit");
+    $logMsg = "Creating bait files, all folders of all shares.  This may take a bit";
   }
+  file_put_contents($ransomwarePaths['startupStatus'],$logMsg);
   if ( isdir("/mnt/user") ) {
     $userBase = "/mnt/user";
   } else {
@@ -188,7 +190,7 @@ while ( true ) {
   exec("mkdir -p /boot/config/plugins/ransomware.bait");
   copy("/tmp/ransomware/filelist","/boot/config/plugins/ransomware.bait/filelist");
   @unlink("/tmp/ransomware/filelist");
-  
+  @unlink($ransomwarePaths['startupStatus']);  
   if ( $errorBait ) {
     logger("The following bait files could not be created");
     foreach ($errorBait as $error) {
@@ -207,7 +209,7 @@ while ( true ) {
   logger("Starting Background Monitoring Of Bait Files");
   while ( true ) {
     @unlink("/tmp/ransomware/event");
-    exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']." 2>>/var/log/syslog");
+    exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']." 2>&1 | logger -i");
     $tmpEvent = @file_get_contents("/tmp/ransomware/event");
     if ( ! trim($tmpEvent) ) {
       logger("Something went wrong and inotify exited.  Exiting");
