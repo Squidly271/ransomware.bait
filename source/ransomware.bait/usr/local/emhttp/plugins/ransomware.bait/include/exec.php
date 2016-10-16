@@ -20,18 +20,37 @@ function getSettings() {
 }
 
 switch ($_POST['action']) {
-  case 'applySettings':
-    $settings = getSettings();
-    
-    writeJsonFile("/boot/config/plugins/ransomware.bait/settings.json",$settings);
-    if ( $settings['enableService'] == "true" ) {
-      exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php");
-      exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh");
-    } else {
-      exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php");
-      exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
-    }
+  case 'applyBaitFileSettings':
+    $settings = parse_ini_file($ransomwarePaths['settings'],true);
+    $settings['baitFile'] = getSettings();
+    file_put_contents($ransomwarePaths['settings'],create_ini_file($settings,true));
+    file_put_contents($ransomwarePaths['settingsRAM'],create_ini_file($settings,true));
+    file_put_contents($ransomwarePaths['restartRequired'],"uh huh");
     echo "done";
+    break;
+  case 'applyActionSettings':
+    $settings = parse_ini_file($ransomwarePaths['settings'],true);
+    $settings['actions'] = getSettings();
+    file_put_contents($ransomwarePaths['settings'],create_ini_file($settings,true));
+    file_put_contents($ransomwarePaths['settingsRAM'],create_ini_file($settings,true));
+    file_put_contents($ransomwarePaths['restartRequired'],"uh huh");
+    echo "done";
+    break;
+  case 'validateScript':
+    $script = trim(getPost("script",""));
+    if ( ! $script ) {
+      echo "ok";
+      break;
+    }
+    if ( isdir($script) ) {
+      echo "Must Select A File";
+      break;
+    }
+    if ( ! is_executable($script) ) {
+      echo "Not Executable $script";
+      break;
+    }
+    echo "ok";
     break;
   case 'resetSMBPermissions':
     if ( ! isdir($ransomwarePaths['shareBackup']) ) { break; }
@@ -51,15 +70,51 @@ switch ($_POST['action']) {
     smbReadOnly();
     break;
   case 'getStatus':
+    $settings = readSettingsFile();
     $message = @file_get_contents($ransomwarePaths['startupStatus']);
+
     if ( ! $message ) {
       if ( isfile($ransomwarePaths['PID']) ) {
-        $message =  "<font color='green'>Running</font>";
-      } else {
-        $message =  "<font color='red'>Not Running</font>";
+        $message =  "<font color=green>Running</font>";
+        $running = true;
+        $script .= "var stoppable = false;";
+        $script .= "var startable = true;";
+        } else {
+        $message =  "<font color=red>Not Running</font>";
+        $script .= "var stoppable = true;";
+        if ( $settings['baitFile']['enableService'] == "true" ) {
+          $script .= "var startable = false;";
+        } else {
+          $script .= "var startable = true;";
+        }
       }
     }
-    echo $message;
+    if ( is_file($ransomwarePaths['filelist']) && ! isfile($ransomwarePaths['deleteProgress']) && ! $running ) {
+      $script .= "var deleteable = false;";
+    } else {
+      $script .= "var deleteable = true;";
+    }
+    if ( isfile($ransomwarePaths['restartRequired']) && $running ) {
+      $script .= "var restartRequired = true;";
+    } else {
+      $script .= "var restartRequired = false;";
+    }
+    if ( isfile($ransomwarePaths['numMonitored']) ) {
+      $script .= "var totalMonitored = ".file_get_contents($ransomwarePaths['numMonitored']).";";
+    } else {
+      $script .= "var totalMonitored = '0';";
+    }
+    if ( isfile($ransomwarePaths['smbStatusFile']) ) {
+      $script .= "var smbHistory = true;";
+    } else {
+      $script .= "var smbHistory = false;";
+    }
+    if ( isfile($ransomwarePaths['creationErrors']) ) {
+      $script .= "var creationErrors = true;";
+    } else {
+      $script .= "var creationErrors = false;";
+    }
+    echo "<script>$('#running').html('$message');$script</script>";
     break;
   case 'getAttackStatus':
     if ( isdir($ransomwarePaths['shareBackup']) ) {
@@ -72,5 +127,17 @@ switch ($_POST['action']) {
     }
     echo $attack;
     break;
+  case 'stopServices':
+    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php");
+    @unlink($ransomwarePaths['restartRequired']);
+    break;
+  case 'startServices':
+    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh");
+    @unlink($ransomwarePaths['restartRequired']);
+    break;
+  case 'deleteBait':
+    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
+    break;
+    
 }
 ?>

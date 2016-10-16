@@ -1,0 +1,148 @@
+Menu="ransomware:1"
+Icon="lock.png"
+Title="Protection Status"
+---
+<?
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
+
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/rpCredits.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
+
+$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
+$smbHistory = is_file($ransomwarePaths['smbStatusFile']) ? "true" : "false";
+$allSettings = readSettingsFile();
+
+?>
+
+<script>
+var URL = "/plugins/ransomware.bait/include/exec.php";
+var attackInterval = 0;
+
+$(function(){
+  setInterval(function() {
+    $.post(URL,{action:'getStatus'}, function(data) {
+      if (data) {
+        $("#settingsScript").html(data);
+        $("#startBackground").prop("disabled",startable);
+        $("#stopBackground").prop("disabled",stoppable);
+        $("#startDelete").prop("disabled",deleteable);
+        $("#totalMonitored").html(totalMonitored);
+        if ( restartRequired ) {
+          $(".baitFileSettingsChanged").show();
+        } else {
+          $(".baitFileSettingsChanged").hide();
+        }
+        if ( smbHistory ) {
+          $("#smbHistory").show();
+          $("#noSMBHistory").hide();
+        } else {
+          $("#smbHistory").hide();
+          $("#noSMBHistory").show();
+        }
+        if ( creationErrors ) {
+          $("#creationErrors").show();
+          $("#noCreationErrors").hide();
+        } else {
+          $("#creationErrors").hide();
+          $("#noCreationErrors").show();
+        }
+      }
+    });
+  },1000);
+});
+
+function showCredits() {
+  myAlert("Ransomware Protection","<?=$rpCredits?>","/plugins/ransomware.bait/images/biglock.png","96x96", true, false, true);
+}
+
+function listenForAttack() {
+  attackInterval = setInterval(function() {
+    attack();
+  },1000);
+}
+
+function attack() {
+  $.post(URL,{action:'getAttackStatus'}, function(data) {
+    if ( data != "ok" ) {
+      $("#setReadOnlyMode").hide();
+      clearInterval(attackInterval);
+      resetSMBPermissions(data);
+    }
+  });
+}
+
+function showLogging() {
+  openBox('plugins/ransomware.bait/scripts/showLog.sh',"Ransomware Log",600,1000);
+}
+
+function showErrors() {
+  openBox("plugins/ransomware.bait/scripts/showErrors.sh","Ransomware Bait File Creation Errors",600,1000);
+}
+
+function stopBackground() {
+  $("#stopBackground").prop("disabled",true);
+  $.post(URL,{action:'stopServices'});
+}
+
+function startBackground() {
+  $("#startBackground").prop("disabled",true);
+  $.post(URL,{action:'startServices'});
+}
+
+function deleteBait() {
+  swal({
+    title: "Delete Bait Files?",
+    text: "This will delete all of the currently set bait files.  On the next start of the background services, they will be recreated.  This operation will run in the background and may take a few minutes.",
+    type: "warning",
+    html: true,
+    showCancelButton: true,
+    showConfirmButton: true,
+    allowOutsideClick: true,
+    closeOnConfirm: true
+  },
+  function(isConfirm) {
+    if (isConfirm){
+      $("#startDelete").prop("disabled",true);
+      $.post(URL,{action:'deleteBait'});
+    }
+  });
+}
+
+</script>
+<span id='testing'><span>
+<table>
+<tr>
+  <td width=25%><font size='3'>Ransomware Protection Version: </td><td><font color='green' size='3'><span class='ransomwareProtectionVersion'></span></font> <span id='upgradeAvailable' style='display:none'><a href='/Plugins'><font color='red'>An upgrade to this plugin is available</font></a></span></font><br>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a><br><a style='cursor:pointer' onclick='showCredits();'>Plugin Credits</a></td>
+</tr>
+<tr>
+  <td width=25%><font size='3'>Bait File Monitor Status:</td><td><font size='3'><span id='running'></span></font></td>
+</tr>
+<tr>
+  <td width=25%><font size='3'>Bait Share Monitor Status:</td><td><font size='3' color='red'>Not Running</font></td>
+</tr>
+<tr>
+  <td width=25%><font size='3'>Total Bait Files Monitored:</td><td><span id='totalMonitored'>0</span></td>
+</tr>
+<tr>
+  <td width=25%><font size='3'>Attack History</td><td><span id='smbHistory' style='display:none'><a onclick='viewHistory();' style='cursor:pointer'><font color='red'>Click here to display the attack history</font></a></span><span id='noSMBHistory'><font color='green'>No Attack History Found</font></span>
+<tr>
+  <td width=25%><font size='3'>Logging:</td><td><a onclick='showLogging();' style='cursor:pointer'>Show Ransomware Protection Log</a></td>
+</tr>
+<tr>
+  <td width=25%><font size='3'>Creation Errors:</td><td><span id='noCreationErrors'>No Creation Errors</span><span id='creationErrors' style='display:none'><a onclick='showErrors();' style='cursor:pointer'><font color='red'>Click Here To Display The Errors During Bait File Creation</font></a></span></td>
+</tr>
+</table>
+
+<input type='button' value='Start Background Services' id='startBackground' onclick='startBackground();' disabled><input type='button' value='Stop Background Services' id='stopBackground' onclick='stopBackground();' disabled><input type='button' id='startDelete' value='Delete Previous Bait Files' onclick='deleteBait();' disabled>
+<br><span class='baitFileSettingsChanged' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
+<span id='settingsScript'><?=$settingsOutput?></span>
+<div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/biglock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Immediately Set SMB/AFP to Be Read-Only</font></figcaption></figure></center></div>
+
+<div id='readOnlyMode' style='display:none'><center><font size='3' color='red'>SMB RUNNING IN READ-ONLY MODE.  Click <a onclick='resetSMBPermissions();' style='cursor:pointer'>HERE</a> to reset the permissions</font></center><br><br></div>
+
+<span id='startable' style='display:none'>no</span>

@@ -9,7 +9,7 @@
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 function logger($string) {
-  shell_exec('logger -i ransomware protection:"'.$string.'"');
+  shell_exec('logger ransomware protection:"'.$string.'"');
 }
 function isfile($filename) {
   clearstatcache();
@@ -47,5 +47,6 @@ if ( $filelist ) {
 logger("$totalFiles Bait Files Deleted");
 @unlink("/boot/config/plugins/ransomware.bait/filelist");
 @unlink($ransomwarePaths['deleteProgress']);
+@unlink($ransomwarePaths['numMonitored']);
 
 ?>

@@ -1,0 +1,222 @@
+Menu="ransomware:3"
+Icon="lock.png"
+Title="Bait File Creation"
+---
+<?
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
+
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/rpCredits.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
+
+$appdataShares = getAppData();
+foreach ($appdataShares as $appdata) {
+  $appdataList .= "<b><font size='0' color='purple'>/mnt/user/$appdata</font></b><br>";
+}
+
+$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
+if ( is_file("/tmp/plugins/community.applications.plg") ) {
+  $upgradeVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /tmp/plugins/ransomware.bait.plg");
+} else {
+  $upgradeVersion = "0";
+}
+$upgradeAvailable = ($installedVersion < $upgradeVersion) ? "true" : "false";
+
+$inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
+
+$allSettings = readSettingsFile();
+$settings = $allSettings['baitFile'];
+
+$event = trim(@file_get_contents($ransomwarePaths['detected']));
+
+?>
+<style>.fileTree{width:305px;max-height:150px;overflow:scroll;position:absolute;z-index:100;display:none;}</style>
+<link type="text/css" rel="stylesheet" href="/webGui/styles/jquery.filetree.css">
+<script src="/webGui/javascript/jquery.filetree.js"></script>
+<script>
+
+$(function() {
+  $('.ransomwareProtectionVersion').html('<?=$installedVersion?>');
+
+  if ( '<?=$upgradeAvailable?>' == "true" ) {
+    $("#upgradeAvailable").show();
+  }
+
+  $("#excludedFoldersList").fileTree({
+    root: "/mnt/user",
+    multiSelect: true,
+    filter: "HIDE_FILES_FILTER",
+    folderEvent: "nothing"
+  });
+
+  $('#enableService').val('<?=$settings['enableService']?>');
+  $('#folders').val('<?=$settings['folders']?>');
+
+  $('#excludeAppdata').val('<?=$settings['excludeAppdata']?>');
+  $('#excluded').val('<?=$settings['excluded']?>');
+  $('#recreate').val('<?=$settings['recreate']?>');
+  
+  if ( '<?=$inotifyInstalled?>' == 'false' ) {
+    swal({
+      title: "inotify tools not installed",
+      text: "This plugin requires inotify tools (inotifywait) to be installed.  To install this, you must install the NerdPack plugin (available within Community Applications), and set inotifytools to install within the NerdPack Settings",
+      type: "error"
+    });
+  }
+
+
+  listenForAttack();
+});
+
+
+
+function myAlert(description,textdescription,textimage,imagesize, outsideClick, showCancel, showConfirm, alertType) {
+  if ( !outsideClick ) outsideClick = false;
+  if ( !showCancel )   showCancel = false;
+  if ( !showConfirm )  showConfirm = false;
+  if ( imagesize == "" ) { imagesize = "80x80"; }
+  swal({
+    title: description,
+    text: textdescription,
+    imageUrl: textimage,
+    imageSize: imagesize,
+    allowOutsideClick: outsideClick,
+    showConfirmButton: showConfirm,
+    showCancelButton: showCancel,
+    type: alertType,
+    html: true
+  });
+}
+
+
+function resetSMBPermissions(reason) {
+  if ( ! reason || reason == "user" ) {
+    var title = "<font color='red'>SMB in Read-Only Mode";
+    var text  =  "SMB has been set to be in read-only mode due to a <font color='red'>possible attack</font> or <em>User Selection</em>.  You can choose to reset the SMB permissions by clicking below.  If this was caused by an attack, it is not advised to reset permission to normal";
+  } else {
+    var title = "<font color='red'>Attack Detected";
+    var text  = "SMB has been set to be in read-only mode due to a <font color='red'>possible attack</font> on "+reason+"You can choose to reset the SMB permissions by clicking below.  If this was caused by an attack, it is not advised to reset permission to normal";
+  }
+  $("#readOnlyMode").show();
+  swal({
+    title: title,
+    text: text,
+    type: "warning",
+    html: true,
+    showCancelButton: true,
+    showConfirmButton: true,
+    confirmButtonText: "Restore SMB Permissions",
+    allowOutsideClick: true,
+    closeOnConfirm: false
+  },
+  function(isConfirm) {
+    if (isConfirm){
+      $("#readOnlyMode").hide();
+      $("#setReadOnlyMode").show();
+      $.post(URL,{action:'resetSMBPermissions'});
+      swal("Permissions Reset","The SMB permissions have been reset back to their normal values.  There will be an interruption in access to the server for a few moments","success");
+      listenForAttack();
+    }
+  });
+}
+
+function setReadOnly() {
+  $.post(URL,{action:'setReadOnly'});
+  $("#setReadOnlyMode").hide();
+  $("#readOnlyMode").show();
+  smbReadOnlyReason = "user";
+  swal("Read Only Mode Set","SMB has been set to be in read-only mode.  There will be an interruption in access to the server for a few moments","success");
+}  
+
+function enableApply() {
+  $("#apply").prop("disabled",false);
+}
+
+function applyBaitFile() {
+  var settings = new Array();
+  
+  $(".settings").each(function() {
+    var usersChoice = $(this).val();
+    var newSetting = new Array(this.id,usersChoice);
+    
+    settings.push(newSetting);
+  });
+  $.post(URL,{action:'applyBaitFileSettings',settings:settings}, function(data) {
+    if (data) {
+      $("#apply").prop('disabled',true);
+    }
+  });
+}
+function setExcluded() {
+				$el = $( "#excludedFoldersList input:checked" );
+
+				if( $el.length === 0 )
+				{
+					checked = "";
+				}
+				else {
+					var checked = $el
+						.map(function() {
+							return "/mnt/user/"+$(this).parent().find('a:first').text();
+						})
+						.get()
+						.join(',');
+						}
+    $("#excluded").val(checked);
+    enableApply();
+ }
+
+ function viewHistory() {
+  openBox("/plugins/ransomware.bait/scripts/showHistory.php","Attack History",550,1100);
+}
+</script>
+
+<table>
+<tr>
+  <td width=25%><b>Utilize Bait File Service</b></td>
+  <td width=25%><select class='settings' id='enableService' onchange='enableApply();'>
+    <option value='false'>No</option>
+    <option value='true'>Yes</option>
+  </td>
+</tr>
+<tr>
+  <td><b>Bait File Placement<b></td>
+  <td><select class='settings' id='folders' onchange='enableApply();'>
+    <option value='root'>Root only of shares</option>
+    <option value='all'>All folders of shares</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Exclude AppData Shares</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded<br><?=$appdataList?></td>
+  <td><select class='settings' id='excludeAppdata' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Additional Excluded Shares:</b></td>
+  <td><input type='text' class='settings' id='excluded' value='<?=$backupOptions['excluded']?>' onchange='enableApply();'></span></td>
+  <td width=20%><center><b>Excluded Share Browser</b><br><input type='button' value='Exclude Selected' onclick='setExcluded();'><br></center><div id='excludedFoldersList' style='width:305px;max-height:150px;overflow:scroll;position:absolute;z-index:100;'></div><br><center></td>
+</tr>
+<tr>
+  <td><b>Recreate bait files on service stop / start:</b></td>
+  <td><select class='settings' id='recreate' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No - Use the existing bait files</option>
+    </select>
+  </td>
+</tr>
+</table>
+
+<input type='button' id='apply' value='Apply' disabled onclick='applyBaitFile();'>
+<input type='button' id='done' value='Done' onclick='done();'><br>
+<span class='baitFileSettingsChanged' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
+
+<center><b>Ransomware Protection version: <span class='ransomwareProtectionVersion'></span></b><br>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a></center>
+<a style='float:right;cursor:pointer;position: fixed; bottom: 50px; right: 50px;' onclick='showCredits();'>Credits</a>

@@ -9,7 +9,7 @@
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 function logger($string) {
-  shell_exec('logger -i ransomware protection:"'.$string.'"');
+  shell_exec('logger ransomware protection:"'.$string.'"');
 }
 function isfile($filename) {
   clearstatcache();
@@ -31,6 +31,17 @@ if ($pid) {
   logger("Ransomware protection service not running");
 }
 @unlink($ransomwarePaths['PID']);
+
+$pid = @file_get_contents($ransomwarePaths['deletePID']);
+if ($pid) {
+  logger("Stopping the ransomware protection delete process");
+  exec("kill -9 $pid > /dev/null 2>&1");
+} else {
+  logger("Ransomware protection delete process not running");
+}
+@unlink($ransomwarePaths['deletePID']);
+
+@unlink($ransomwarePaths['detected']);
 
 # if the tmp file exists, service is being stopped prior to completion, so save the damn file so that the bait doesn't get orphaned
 if ( isfile("/tmp/ransomware/filelist") ) {

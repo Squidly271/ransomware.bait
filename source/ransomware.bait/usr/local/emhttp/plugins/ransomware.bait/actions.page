@@ -1,0 +1,96 @@
+Menu="ransomware:4"
+Icon="lock.png"
+Title="Actions"
+---
+<?
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
+
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
+
+$allSettings = readSettingsFile();
+$settings = $allSettings['actions'];
+?>
+<style>
+.fileTree{width:305px;max-height:150px;overflow:scroll;position:absolute;z-index:100;display:none;}
+</style>
+<link type="text/css" rel="stylesheet" href="/webGui/styles/jquery.filetree.css">
+<script src="/webGui/javascript/jquery.filetree.js"></script>
+<script>
+$(function(){
+  $("#stopScript").fileTreeAttach();
+  $('#stopArray').val('<?=$settings['stopArray']?>');
+  $('#readOnlySMB').val('<?=$settings['readOnlySMB']?>');
+  $('#readOnlyAFP').val('<?=$settings['readOnlyAFP']?>');
+});
+
+function enableActionApply() {
+  $("#applyActions").prop("disabled",false);
+}
+function applyActions() {
+  var settings = new Array();
+  
+  $(".actionSettings").each(function() {
+    var usersChoice = $(this).val();
+    var newSetting = new Array(this.id,usersChoice);
+    
+    settings.push(newSetting);
+  });
+  $.post(URL,{action:'applyActionSettings',settings:settings}, function(data) {
+    if (data) {
+      $("#applyActions").prop('disabled',true);
+    }
+  });
+}
+
+function validateScript() {
+  var script = $("#stopScript").val();
+  
+  $.post(URL,{action:'validateScript',script:script},function(data){
+    if (data) {
+      if (data == "ok") {
+        enableActionApply();
+        $("#scriptError").html(" ");
+      } else {
+        $("#applyActions").prop("disabled",true);
+        $("#scriptError").html(data);
+      }
+    }
+  });
+}
+</script>
+<table>
+<tr>
+  <td width=25%><b>Set SMB to be read-only on detection</b></td>
+  <td><select class='actionSettings' id='readOnlySMB' onchange='validateScript();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+  </td>
+</tr>
+<tr>
+  <td><b>Set AFP to be read-only on detection</b></td>
+  <td><select class='actionSettings' id='readOnlyAFP' onchange='validateScript();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+  </td>
+</tr>
+<tr>
+  <td><b>Stop Array on Detection</b></td>
+  <td><select class='actionSettings' id='stopArray' onchange='validateScript();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Path To Custom Stop Script:</b></td>
+  <td><input onchange='validateScript();' class='actionSettings' id='stopScript' type='text' data-pickroot="/" data-pickfolders="true"></input><font color='red'><span id='scriptError'></span></font></td>
+</tr>
+</table>
+<input type='button' id='applyActions' value='Apply' disabled onclick='applyActions();'>
+<input type='button' id='done' value='Done' onclick='done();'><br>
+<span class='baitFileSettingsChanged' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
