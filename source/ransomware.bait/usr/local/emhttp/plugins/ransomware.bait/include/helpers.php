@@ -5,23 +5,7 @@
 #                                                       #
 #########################################################
 
-
-###################################################################################
-#                                                                                 #
-# returns a random file name                                                      #
-#                                                                                 #
-###################################################################################
-
-function randomFile($basePath) {
-  global $communityPaths;
-  while (true) {
-    $filename = $basePath."/".mt_rand().".tmp";
-    if ( ! isfile($filename) ) {
-      break;
-    }
-  }
-  return $filename;
-}
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 ##################################################################
 #                                                                #
@@ -45,7 +29,7 @@ function writeJsonFile($filename,$jsonArray) {
 ############################################
 
 function logger($string) {
-  shell_exec('logger -i ransomware protection:"'.$string.'"');
+  shell_exec('logger ransomware protection:"'.$string.'"');
 }
 
 ###########################################
@@ -64,6 +48,59 @@ function notify($event,$subject,$description,$message,$type="normal") {
 # Returns an array of all of the appdata shares present #
 #                                                       #
 #########################################################
+
+################################################################
+#                                                              #
+# Creates an INI file parseable by parse_ini_file              #
+# Set $mode to be true when dealing with multi-dimension array #
+#                                                              #
+################################################################
+
+function readSettingsFile() {
+  global $ransomwarePaths;
+
+  if ( isfile($ransomwarePaths['settingsRAM']) ) {
+    $user = @parse_ini_file($ransomwarePaths['settingsRAM'],true);
+  }
+  if ( isfile($ransomwarePaths['settings']) ) {
+    copy($ransomwarePaths['settings'],$ransomwarePaths['settingsRAM']);
+    $user = @parse_ini_file($ransomwarePaths['settingsRAM'],true);
+  }
+  if ( ! $user ) {
+    $user = array();
+  }
+  $default = @parse_ini_file($ransomwarePaths['defaultSettings'],true);
+  $defaultKeys = array_keys($default);
+  foreach ($defaultKeys as $keys) {
+    $entries = array_keys($default[$keys]);
+    foreach ($entries as $entry) {
+      if ( ! isset($user[$keys][$entry]) ) {
+        $user[$keys][$entry] = $default[$keys][$entry];
+      }
+    }
+  }
+  return $user;
+}
+
+function create_ini_file($settings,$mode=false) {
+  if ( $mode ) {
+    $keys = array_keys($settings);
+
+    foreach ($keys as $key) {
+      $iniFile .= "[$key]\r\n";
+      $entryKeys = array_keys($settings[$key]);
+      foreach ($entryKeys as $entry) {
+        $iniFile .= $entry.'="'.$settings[$key][$entry].'"'."\r\n";
+      }
+    }
+  } else {
+    $entryKeys = array_keys($settings);
+    foreach ($entryKeys as $entry) {
+      $iniFile .= $entry.'="'.$settings[$entry].'"'."\r\n";
+    }
+  }
+  return $iniFile;
+}
 
 function getAppData() {
   $excludedShares = array();
@@ -221,6 +258,14 @@ function smbReadOnly() {
   file_put_contents("/boot/config/disk.cfg",createIniFile($shareSettings));
 
   # all previously configured shares are now hopefully readonly.  Set unconfigured shares to be read-only
+  
+  $allShares = scan("/mnt/user");
+  foreach ($allShares as $share) {
+    if ( ! is_file("/boot/config/shares/$share.cfg") ) {
+      copy("/usr/local/emhttp/plugins/ransomware.bait/include/defaultShare.cfg","/boot/config/shares/$share.cfg");
+    } 
+  }
+  
   #exec("/etc/rc.d/rc.samba restart");
 }
 
@@ -249,4 +294,7 @@ function isdir($path) {
   return is_dir($path);
 }
 
+function getPost($setting,$default) {
+  return isset($_POST[$setting]) ? urldecode(($_POST[$setting])) : $default;
+}
 ?>

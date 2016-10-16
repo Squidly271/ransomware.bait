@@ -18,25 +18,12 @@ function stopEverything($path) {
   if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
     smbReadOnly();
   }
-/*   if ( $settings['stopSMB'] ) {
-    logger("Stopping SMB");
-    exec("/etc/rc.d/rc.samba stop");
-  } */
   if ( $settings['stopArray'] == "true" ) {
     logger("Stopping AFP");
     exec("/etc/rc.d/rc.atalk stop");    
     logger("Stopping NFS");
     exec("/etc/rc.d/rc.nfsd stop");
   }
-/*   if ( $settings['stopAFP'] ) {
-    logger("Stopping AFP");
-    exec("/etc/rc.d/rc.atalk stop");
-  }
-  if ( $settings['stopNFS'] ) {
-    logger("Stopping NFS");
-    exec("/etc/rc.d/rc.nfsd stop");
-  } */
-    
   notify("Ransomware Protection","Possible Ransomware Attack Detected","Possible Attack On $path","","alert");
   logger("..");
   logger("Possible Ransomware attack detected on file $path");
@@ -47,6 +34,9 @@ function stopEverything($path) {
   foreach($output as $statusLine) {
     logger($statusLine);
     file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
+  }
+  if ( $settings['stopScript'] ) {
+    exec($settings['stopScript']);
   }
 }
 
@@ -98,31 +88,25 @@ function createBait($path) {
   }
 }
 
-
-
-
-
-
+##################################################################################################################
 
 $unRaidVars = parse_ini_file("/var/local/emhttp/var.ini");
 if ( strtolower($unRaidVars['mdState']) != "started" ) {
   logger("Array Not Started.  Exiting");
   exit;
 }
-$settings = readJsonFile($ransomwarePaths['settings']);
-if ( $settings['enableService'] != "true" ) {
+
+$allSettings = readSettingsFile();
+if ( ! $allSettings ) {
   logger("No Settings Defined For Ransomware Protection - Exiting");
   exit;
 }
-if ( ! $settings['enableService'] ) { $settings['enableService'] = "false"; }  
-if ( ! $settings['folders'] )       { $settings['folders'] = "root"; }
-if ( ! $settings['stopSMB'] )       { $settings['stopSMB'] = "true"; }
-if ( ! $settings['stopNFS'] )       { $settings['stopNFS'] = "true"; }
-if ( ! $settings['stopAFP'] )       { $settings['stopAFP'] = "true"; }
-if ( ! $settings['stopArray'] )     { $settings['stopArray'] = "true";}
-if ( ! $settings['readOnlySMB'] )   { $settings['readOnlySMB'] = "true"; }
-if ( ! $settings['unRaidPort'] )    { $settings['unRaidPort'] = 80; }
-if ( ! $settings['excludeAppdata'] ) { $settings['excludeAppdata'] = 'true'; }
+
+$settings                = $allSettings['baitFile'];
+$settings['stopArray']   = $allSettings['actions']['stopArray'];  # Because this module was programmed prior to separate sections in settings
+$settings['readOnlySMB'] = $allSettings['actions']['readOnlySMB'];
+$settings['readOnlyAFP'] = $allSettings['actions']['readOnlyAFP'];
+$settings['stopScript']  = $allSettings['actions']['stopScript'];
 
 if ( ! isfile("/usr/bin/inotifywait") ) {
   logger("inotify tools not installed.  Install it via NerdPack plugin available within Community Applications");
@@ -131,6 +115,10 @@ if ( ! isfile("/usr/bin/inotifywait") ) {
 }
 if ( isfile($ransomwarePaths['PID']) ) {
   logger("ransomware protection appears to be already running");
+  exit;
+}
+if ( $settings['enableService'] != "true" ) {
+  logger("Bait File monitoring not enabled.  Exiting");
   exit;
 }
 
@@ -142,62 +130,108 @@ exec("mkdir -p /tmp/ransomware/");
 
 $pid = getmypid();
 file_put_contents($ransomwarePaths['PID'],$pid);
+
+$priorMode = @file_get_contents($ransomwarePaths['priorCreationMode']);
+if ( $priorMode ) {
+  if ( $priorMode != $settings['folders'] ) {
+    logger("Placement of bait files has changed.  Automatically deleting old bait files");
+    $settings['recreate'] = "true";
+  }
+}
+
 while ( true ) {
   if ( ! isfile($ransomwarePaths['deleteProgress']) ) {
-    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
-    sleep(5);
+    if ( isfile("/boot/config/plugins/ransomware.bait/filelist") ) {
+      if ( $settings['recreate'] == "true" ) {
+        exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
+        sleep(5);
+      } else {
+        logger("Gathering Inventory Of Old Bait Files");
+        $oldFiles = @file_get_contents("/boot/config/plugins/ransomware.bait/filelist");
+        $allOldFiles = explode("\n",$oldFiles);
+        unset($oldFiles);  # save some memory
+        @unlink("/tmp/ransomware/filelist");
+        foreach ($allOldFiles as $oldFile) {
+          if (isfile($oldFile)) {
+            ++$totalBait;
+            file_put_contents("/tmp/ransomware/filelist","$oldFile\n",FILE_APPEND);
+          } 
+        }
+        if ( ! isfile("/tmp/ransomware/filelist") ) {
+          exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
+          sleep(5);
+        } else {
+          copy("/tmp/ransomware/filelist","/boot/config/plugins/ransomware.bait/filelist");
+          logger("Found $totalBait previous bait files.");
+          file_put_contents($ransomwarePaths['numMonitored'],$totalBait);
+        }
+      }
+    }
   }
   while ( true ) {
     if ( isfile($ransomwarePaths['deleteProgress']) ) {
       logger("Waiting For deletion of bait files to complete");
       sleep(30);
-      clearstatcache();
     } else {
       break;
     }
   }
+  if ( ! isfile("/boot/config/plugins/ransomware.bait/filelist") ) {
+    if ( ($settings['excludeAppdata'] == 'true') || ($settings['folders'] != 'root') ) {
+      $appdata = getAppData();
+    }
+    $excludedShares = explode(",",$settings['excluded']);
+    if ( scan("/boot/config/plugins/ransomware.bait/bait") ) {
+      $root = "/boot/config/plugins/ransomware.bait/bait";
+    } else {
+      $root = "/usr/local/emhttp/plugins/ransomware.bait/bait";
+    }
+    $rootContents = scan($root);
   
-  if ( ($settings['excludeAppdata'] == 'true') || ($settings['folders'] != 'root') ) {
-    $appdata = getAppData();
-  }
-  $excludedShares = explode(",",$settings['excluded']);
-  if ( scan("/boot/config/plugins/ransomware.bait/bait") ) {
-    $root = "/boot/config/plugins/ransomware.bait/bait";
-  } else {
-    $root = "/usr/local/emhttp/plugins/ransomware.bait/bait";
-  }
-  $rootContents = scan($root);
-  
-  foreach ($rootContents as $baitFile) {
-    $md5Array[$baitFile] = md5_file("$root/$baitFile");
-  }
+    foreach ($rootContents as $baitFile) {
+      $md5Array[$baitFile] = md5_file("$root/$baitFile");
+    }
 
-  unset($totalBait);
-  @unlink("/tmp/ransomware/filelist");
-  if ( $settings['folders'] == "root" ) {
-    $logMsg = "Creating bait files, root of shares only";
-  } else {
-    $logMsg = "Creating bait files, all folders of all shares.  This may take a bit";
-  }
-  file_put_contents($ransomwarePaths['startupStatus'],$logMsg);
-  if ( isdir("/mnt/user") ) {
-    $userBase = "/mnt/user";
-  } else {
-    $userBase = "/mnt";
-  }
-  unset($errorBait);
-  createBait($userBase);
-  exec("mkdir -p /boot/config/plugins/ransomware.bait");
-  copy("/tmp/ransomware/filelist","/boot/config/plugins/ransomware.bait/filelist");
-  @unlink("/tmp/ransomware/filelist");
-  @unlink($ransomwarePaths['startupStatus']);  
-  if ( $errorBait ) {
-    logger("The following bait files could not be created");
-    foreach ($errorBait as $error) {
-      logger($error);
+    unset($totalBait);
+    @unlink("/tmp/ransomware/filelist");
+    if ( $settings['folders'] == "root" ) {
+      $logMsg = "Creating bait files, root of shares only";
+    } else {
+      $logMsg = "Creating bait files, all folders of all shares.  This may take a bit";
+    }
+    file_put_contents($ransomwarePaths['startupStatus'],$logMsg);
+    logger($logMsg);
+    if ( isdir("/mnt/user") ) {
+      $userBase = "/mnt/user";
+    } else {
+      $userBase = "/mnt";
+    }
+    unset($errorBait);
+    createBait($userBase);
+    file_put_contents($ransomwarePaths['priorCreationMode'],$settings['folders']);
+    exec("mkdir -p /boot/config/plugins/ransomware.bait");
+    @copy("/tmp/ransomware/filelist","/boot/config/plugins/ransomware.bait/filelist");
+    @unlink("/tmp/ransomware/filelist");
+    @unlink($ransomwarePaths['startupStatus']);  
+    if ( $errorBait ) {
+      logger("The following bait files could not be created (Either Write Error or File Name Pre-existing)");
+      @unlink($ransomwarePaths['creationErrors']);
+      file_put_contents($ransomwarePaths['creationErrors'],date("r")."\n\nThe Following Files Could Not Be Created (Either Write Error or File Name Pre-existing):\n\n");
+      foreach ($errorBait as $error) {
+        logger($error);
+        file_put_contents($ransomwarePaths['creationErrors'],$error."\n",FILE_APPEND);
+      }
+    }
+    if ( $totalBait ) {
+      logger("Total bait files created: $totalBait");
+      file_put_contents($ransomwarePaths['numMonitored'],$totalBait);
+    } else {
+      logger("Could not create any bait files.  Aborting ransomware protection");
+      @unlink($ransomwarePaths['PID']);
+      @unlink($ransomwarePaths['numMonitored']);
+      exit();
     }
   }
-  logger("Total bait files created: $totalBait");
 # check for available # of max_user_watches
 
   $totalWatches = explode(" ",exec("cat /proc/sys/fs/inotify/max_user_watches"));
@@ -212,8 +246,9 @@ while ( true ) {
     exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']." 2>&1 | logger -i");
     $tmpEvent = @file_get_contents("/tmp/ransomware/event");
     if ( ! trim($tmpEvent) ) {
-      logger("Something went wrong and inotify exited.  Exiting");
-      break;
+      logger("Something went wrong and inotify exited.  Exiting ransomware protection");
+      @unlink($ransomwarePaths['PID']);
+      exit;
     }
     if ( isfile($ransomwarePaths['stoppingService']) ) {
       unlink($ransomwarePaths['stoppingService']);
