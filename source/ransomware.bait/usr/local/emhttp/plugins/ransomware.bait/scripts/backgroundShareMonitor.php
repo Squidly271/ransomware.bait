@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/usr/bin/php
+<?
 #########################################################
 #                                                       #
 # Ransomware Protection copyright 2016, Andrew Zawadzki #
 #                                                       #
 #########################################################
 
-echo "/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.php" | at NOW -M > /dev/null 2>&1
-echo "/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBaitShare.php" | at NOW -M > /dev/null 2>&1
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
-
+?>

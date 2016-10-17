@@ -13,10 +13,16 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/rpCredits.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 
-$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
 $smbHistory = is_file($ransomwarePaths['smbStatusFile']) ? "true" : "false";
 $allSettings = readSettingsFile();
 
+$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
+if ( is_file("/tmp/plugins/community.applications.plg") ) {
+  $upgradeVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /tmp/plugins/ransomware.bait.plg");
+} else {
+  $upgradeVersion = "0";
+}
+$upgradeAvailable = ($installedVersion < $upgradeVersion) ? "true" : "false";
 ?>
 
 <script>
@@ -24,6 +30,9 @@ var URL = "/plugins/ransomware.bait/include/exec.php";
 var attackInterval = 0;
 
 $(function(){
+  if ( '<?=$upgradeAvailable?>' == "true" ) {
+    $("#upgradeAvailable").show();
+  }
   setInterval(function() {
     $.post(URL,{action:'getStatus'}, function(data) {
       if (data) {
@@ -33,9 +42,9 @@ $(function(){
         $("#startDelete").prop("disabled",deleteable);
         $("#totalMonitored").html(totalMonitored);
         if ( restartRequired ) {
-          $(".baitFileSettingsChanged").show();
+          $(".restartBaitRequired").show();
         } else {
-          $(".baitFileSettingsChanged").hide();
+          $(".restartRequired").hide();
         }
         if ( smbHistory ) {
           $("#smbHistory").show();
@@ -123,11 +132,13 @@ function deleteBait() {
   <td width=25%><font size='3'>Bait File Monitor Status:</td><td><font size='3'><span id='running'></span></font></td>
 </tr>
 <tr>
-  <td width=25%><font size='3'>Bait Share Monitor Status:</td><td><font size='3' color='red'>Not Running</font></td>
+  <td width=25%><font size='3'>Bait Share Monitor Status:</td><td><font size='3'><span id='shareStatus'></span></font></td>
 </tr>
 <tr>
   <td width=25%><font size='3'>Total Bait Files Monitored:</td><td><span id='totalMonitored'>0</span></td>
 </tr>
+<tr>
+  <td width=25%><font size='3'>Total Bait Share Files Monitored:</td><td><span id='totalShareMonitored'>Unknown</span></td>
 <tr>
   <td width=25%><font size='3'>Attack History</td><td><span id='smbHistory' style='display:none'><a onclick='viewHistory();' style='cursor:pointer'><font color='red'>Click here to display the attack history</font></a></span><span id='noSMBHistory'><font color='green'>No Attack History Found</font></span>
 <tr>
@@ -139,7 +150,7 @@ function deleteBait() {
 </table>
 
 <input type='button' value='Start Background Services' id='startBackground' onclick='startBackground();' disabled><input type='button' value='Stop Background Services' id='stopBackground' onclick='stopBackground();' disabled><input type='button' id='startDelete' value='Delete Previous Bait Files' onclick='deleteBait();' disabled>
-<br><span class='baitFileSettingsChanged' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
+<br><span class='restartBaitRequired' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
 <span id='settingsScript'><?=$settingsOutput?></span>
 <div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/biglock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Immediately Set SMB/AFP to Be Read-Only</font></figcaption></figure></center></div>
 

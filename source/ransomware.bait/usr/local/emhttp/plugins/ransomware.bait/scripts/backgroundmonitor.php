@@ -59,6 +59,11 @@ function createBait($path) {
         break;
       }
     }
+    if ($settings['baitShares']) {
+      if (startsWith("$path/$entry","/mnt/user/".$settings['baitShares']."-") ) {
+        continue;
+      }
+    }
     if ( $flag ) {
       continue;
     }
@@ -107,6 +112,7 @@ $settings['stopArray']   = $allSettings['actions']['stopArray'];  # Because this
 $settings['readOnlySMB'] = $allSettings['actions']['readOnlySMB'];
 $settings['readOnlyAFP'] = $allSettings['actions']['readOnlyAFP'];
 $settings['stopScript']  = $allSettings['actions']['stopScript'];
+$settings['baitShares']  = $allSettings['shareSettings']['sharePrefix'];
 
 if ( ! isfile("/usr/bin/inotifywait") ) {
   logger("inotify tools not installed.  Install it via NerdPack plugin available within Community Applications");
@@ -132,14 +138,16 @@ $pid = getmypid();
 file_put_contents($ransomwarePaths['PID'],$pid);
 
 $priorMode = @file_get_contents($ransomwarePaths['priorCreationMode']);
+$priorExclude = @file_get_contents($ransomwarePaths['priorCreationExclude']);
 if ( $priorMode ) {
-  if ( $priorMode != $settings['folders'] ) {
+  if ( ($priorMode != $settings['folders']) || ($priorExclude != $settings['excluded']) ) {
     logger("Placement of bait files has changed.  Automatically deleting old bait files");
     $settings['recreate'] = "true";
   }
 }
 
 while ( true ) {
+  unset($totalBait);
   if ( ! isfile($ransomwarePaths['deleteProgress']) ) {
     if ( isfile("/boot/config/plugins/ransomware.bait/filelist") ) {
       if ( $settings['recreate'] == "true" ) {
@@ -209,6 +217,7 @@ while ( true ) {
     unset($errorBait);
     createBait($userBase);
     file_put_contents($ransomwarePaths['priorCreationMode'],$settings['folders']);
+    file_put_contents($ransomwarePaths['priorCreationExclude'],$settings['excluded']);
     exec("mkdir -p /boot/config/plugins/ransomware.bait");
     @copy("/tmp/ransomware/filelist","/boot/config/plugins/ransomware.bait/filelist");
     @unlink("/tmp/ransomware/filelist");
@@ -221,6 +230,8 @@ while ( true ) {
         logger($error);
         file_put_contents($ransomwarePaths['creationErrors'],$error."\n",FILE_APPEND);
       }
+    } else {
+      @unlink($ransomwarePaths['creationErrors']);
     }
     if ( $totalBait ) {
       logger("Total bait files created: $totalBait");

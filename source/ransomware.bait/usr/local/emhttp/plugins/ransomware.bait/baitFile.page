@@ -10,21 +10,12 @@ Title="Bait File Creation"
 #########################################################
 
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
-require_once("/usr/local/emhttp/plugins/ransomware.bait/include/rpCredits.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 
 $appdataShares = getAppData();
 foreach ($appdataShares as $appdata) {
   $appdataList .= "<b><font size='0' color='purple'>/mnt/user/$appdata</font></b><br>";
 }
-
-$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
-if ( is_file("/tmp/plugins/community.applications.plg") ) {
-  $upgradeVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /tmp/plugins/ransomware.bait.plg");
-} else {
-  $upgradeVersion = "0";
-}
-$upgradeAvailable = ($installedVersion < $upgradeVersion) ? "true" : "false";
 
 $inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
 
@@ -42,9 +33,7 @@ $event = trim(@file_get_contents($ransomwarePaths['detected']));
 $(function() {
   $('.ransomwareProtectionVersion').html('<?=$installedVersion?>');
 
-  if ( '<?=$upgradeAvailable?>' == "true" ) {
-    $("#upgradeAvailable").show();
-  }
+
 
   $("#excludedFoldersList").fileTree({
     root: "/mnt/user",
@@ -174,7 +163,7 @@ function setExcluded() {
   openBox("/plugins/ransomware.bait/scripts/showHistory.php","Attack History",550,1100);
 }
 </script>
-
+<br>
 <table>
 <tr>
   <td width=25%><b>Utilize Bait File Service</b></td>
@@ -214,9 +203,7 @@ function setExcluded() {
 </tr>
 </table>
 
-<input type='button' id='apply' value='Apply' disabled onclick='applyBaitFile();'>
-<input type='button' id='done' value='Done' onclick='done();'><br>
-<span class='baitFileSettingsChanged' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
+<input type='button' id='apply' value='Apply' disabled onclick='applyBaitFile();'><br>
+<span class='restartBaitRequired' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
 
-<center><b>Ransomware Protection version: <span class='ransomwareProtectionVersion'></span></b><br>For support for this plugin, click <a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>HERE</a></center>
 <a style='float:right;cursor:pointer;position: fixed; bottom: 50px; right: 50px;' onclick='showCredits();'>Credits</a>

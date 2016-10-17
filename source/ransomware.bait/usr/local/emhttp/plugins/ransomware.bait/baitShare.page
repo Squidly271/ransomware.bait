@@ -1,0 +1,106 @@
+Menu="ransomware:4"
+Icon="lock.png"
+Title="Bait Share Creation"
+---
+<?
+#########################################################
+#                                                       #
+# Ransomware Protection copyright 2016, Andrew Zawadzki #
+#                                                       #
+#########################################################
+
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
+
+$allSettings = readSettingsFile();
+$shareSettings = $allSettings['shareSettings'];
+
+?>
+<script>
+
+$(function() {
+  $("#enableShareService").val("<?=$shareSettings['enableShareService']?>");
+  $("#numberShares").val("<?=$shareSettings['numberShares']?>");
+  $("#numberFoldersPerShare").val("<?=$shareSettings['numberFoldersPerShare']?>");
+  $("#folderDepth").val("<?=$shareSettings['folderDepth']?>");
+  $("#numberBaitPerFolder").val("<?=$shareSettings['numberBaitPerFolder']?>");
+  $("#shareRecreate").val("<?=$shareSettings['shareRecreate']?>");
+  $("#sharePrefix").val("<?=$shareSettings['sharePrefix']?>");
+});
+
+function shareGetSettings() {
+  var settings = new Array();
+  
+  $(".shareSettings").each(function() {
+    var usersChoice = $(this).val();
+    var newSetting = new Array(this.id,usersChoice);
+    
+    settings.push(newSetting);
+  });
+  return settings;
+}
+
+function validateBaitShares() {
+  var settings = shareGetSettings();
+   $.post(URL,{action:'validateShareSettings',settings:settings},function(data) {
+     if (data) {
+       $("#shareComments").html(data);
+       
+       var status = $("#shareStatus").html();
+       if ( status == "ok" ) {
+         $("#shareApply").prop("disabled",false);
+       } else {
+         $("#shareApply").prop("disabled",true);
+       }
+     }
+   });
+}
+
+function shareApply() {
+  var settings = shareGetSettings();
+  $("#shareApply").prop("disabled",true);
+  $.post(URL,{action:'applyShareSettings',settings:settings});
+}
+</script>
+  
+<br>
+<table>
+<tr>
+  <td width=25%><b>Utilize Bait Share Service</b></td>
+  <td width=25%><select class='shareSettings' id='enableShareService' onchange='validateBaitShares();'>
+    <option value='false'>No</option>
+    <option value='true'>Yes</option>
+  </td>
+</tr>
+<tr>
+  <td width=25%><b>Bait Share Prefix</b><br>This should be unique and not conflict with any of your "normal" share names as there is no guarantee that in the case of a conflict that the files contained will not get deleted</td>
+  <td width=25%><input type='text' class='shareSettings' id='sharePrefix' onchange='validateBaitShares();'></td>
+<tr>
+  <td width=25%><b>Number Of Bait Shares To Create</b><br>(Recommended to use at least 2-3 times the number of "normal" shares you have)</td>
+  <td width=25%><input type='number' style='width:50px' class='shareSettings' id='numberShares' onchange='validateBaitShares();'></td>
+</tr>
+<tr>
+  <td width=25%><b>Number Of Folders Per Share</b></td>
+  <td width=25%><input type='number' style='width:50px' class='shareSettings' id='numberFoldersPerShare' onchange='validateBaitShares();'></td>
+</tr>
+<tr>
+  <td width=25%><b>Depth Of Folders</b></td>
+  <td width=25%><input type='number' style='width:50px' class='shareSettings' id='folderDepth' onchange='validateBaitShares();'></td>
+</tr>
+<tr>
+  <td width=25%><b>Number Of Bait Files Per Folder</b></td>
+  <td width=25%><input type='number' style='width:50px' class='shareSettings' id='numberBaitPerFolder' onchange='validateBaitShares();'></td>
+</tr>
+<tr>
+  <td><b>Recreate bait files on service stop / start:</b></td>
+  <td><select class='shareSettings' id='shareRecreate' onchange='validateBaitShares();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No - Use the existing bait files</option>
+    </select>
+  </td>
+</table>
+<input type='button' id='shareApply' value='Apply' onclick='shareApply();'><br>
+<span class='restartBaitRequired' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
+<br><font color='red'><span id='shareComments'></span></font>
+<span id='shareStatus' style='display:none'></span>
+    
