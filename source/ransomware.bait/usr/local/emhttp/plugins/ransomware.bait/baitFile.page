@@ -205,5 +205,3 @@ function setExcluded() {
 
 <input type='button' id='apply' value='Apply' disabled onclick='applyBaitFile();'><br>
 <span class='restartBaitRequired' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
-
-<a style='float:right;cursor:pointer;position: fixed; bottom: 50px; right: 50px;' onclick='showCredits();'>Credits</a>
