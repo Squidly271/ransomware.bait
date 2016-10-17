@@ -93,4 +93,4 @@ function validateScript() {
 </table>
 <input type='button' id='applyActions' value='Apply' disabled onclick='applyActions();'>
 <input type='button' id='done' value='Done' onclick='done();'><br>
-<span class='baitFileSettingsChanged' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
+<span class='restartBaitRequired' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>

@@ -44,7 +44,7 @@ $(function(){
         if ( restartRequired ) {
           $(".restartBaitRequired").show();
         } else {
-          $(".restartRequired").hide();
+          $(".restartBaitRequired").hide();
         }
         if ( smbHistory ) {
           $("#smbHistory").show();
