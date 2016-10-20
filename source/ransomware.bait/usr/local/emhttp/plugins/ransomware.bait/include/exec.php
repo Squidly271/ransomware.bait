@@ -99,8 +99,7 @@ switch ($_POST['action']) {
         }
       }
     }
-    
-        
+            
     if ( ( isfile($ransomwarePaths['filelist']) || isfile($ransomwarePaths['baitShares'])) && ! isfile($ransomwarePaths['deleteProgress']) && ! $running && ! isfile($ransomwarePaths['deleteBaitSharePID']) ) {
       $script .= "var deleteable = false;";
     } else {

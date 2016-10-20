@@ -30,6 +30,6 @@ $ransomwarePaths['baitShareCount'] = "/tmp/ransomware/baitSharecount";
 $ransomwarePaths['baitShares'] = "/boot/config/plugins/ransomware.bait/baitShareList";
 $ransomwarePaths['baitShareCountPID'] = "/tmp/ransomware/baitShareCountPID";
 $ransomwarePaths['deleteBaitSharePID'] = "/tmp/ransomware/deleteBaitSharePID']";
-
+$ransomwarePaths['smbReadOnlyProcess'] = "/tmp/ransomware/smbReadOnlyProcess";
 
 ?>

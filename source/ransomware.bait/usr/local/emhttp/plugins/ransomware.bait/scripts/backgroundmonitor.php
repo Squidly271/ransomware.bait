@@ -16,7 +16,7 @@ function stopEverything($path) {
   if ( $settings['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
   if ( $settings['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
   if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
-    smbReadOnly();
+    exec("/usr/local/emhttp/plugins/ransomware.bait/script/smbReadOnly.php");
   }
   if ( $settings['stopArray'] == "true" ) {
     logger("Stopping AFP");

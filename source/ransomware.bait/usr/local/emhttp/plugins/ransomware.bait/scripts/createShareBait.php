@@ -72,7 +72,7 @@ file_put_contents($ransomwarePaths['shareStatus'],"Creating Folder Structure");
 for ( $i = 0; $i < $numberShares; $i++ ) {
   while ( true ) {
     $basepath = "/mnt/user/$sharePrefix-".randomWord($dictionary)."/";
-    if ( ! is_dir($path) ) {
+    if ( ! isdir($path) ) {
       mkdir($basepath);
       break;
     } 
