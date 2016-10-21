@@ -39,6 +39,7 @@ killPID($ransomwarePaths['PID'],"ransomware protection service");
 killPID($ransomwarePaths['deletePID'],"ransomware deletion process");
 killPID($ransomwarePaths['createSharePID'],"ransomeware bait share creation process");
 killPID($ransomwarePaths['baitShareCountPID'],"ransomware bait share count process");
+killPID($ransomwarePaths['sharePID'],"ransomware bait share monitor process");
 
 
 @unlink($ransomwarePaths['detected']);

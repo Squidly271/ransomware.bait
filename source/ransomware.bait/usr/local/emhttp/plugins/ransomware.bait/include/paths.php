@@ -9,9 +9,12 @@ $ransomwarePaths['settings'] = "/boot/config/plugins/ransomware.bait/settings.in
 $ransomwarePaths['settingsRAM'] = "/tmp/ransomware/settings.ini";
 $ransomwarePaths['defaultSettings'] = "/usr/local/emhttp/plugins/ransomware.bait/default.ini";
 $ransomwarePaths['filelist'] = "/boot/config/plugins/ransomware.bait/filelist";
+$ransomwarePaths['baitShareFileList'] = "/boot/config/plugins/ransomware.bait/baitShareFileList";
 $ransomwarePaths['PID']      = "/tmp/ransomware/ransomware.bait.pid";
+$ransomwarePaths['sharePID'] = "/tmp/ransomware/ransomware.bait.share.pid";
 $ransomwarePaths['detected'] = "/tmp/ransomware/detected";
 $ransomwarePaths['event']    = "/tmp/ransomware/event";
+$ransomwarePaths['shareEvent'] = "/tmp/ransomware/shareEvent";
 $ransomwarePaths['smbShares'] = "/tmp/ransomware/smbShares-orig";
 $ransomwarePaths['readOnlyReason'] = "/tmp/ransomware/readOnlyReason";
 $ransomwarePaths['stoppingService'] = "/tmp/ransomware/stoppingService";
@@ -29,7 +32,7 @@ $ransomwarePaths['shareStatus'] = "/tmp/ransomware/shareStatus";
 $ransomwarePaths['baitShareCount'] = "/tmp/ransomware/baitSharecount";
 $ransomwarePaths['baitShares'] = "/boot/config/plugins/ransomware.bait/baitShareList";
 $ransomwarePaths['baitShareCountPID'] = "/tmp/ransomware/baitShareCountPID";
-$ransomwarePaths['deleteBaitSharePID'] = "/tmp/ransomware/deleteBaitSharePID']";
+$ransomwarePaths['deleteBaitSharePID'] = "/tmp/ransomware/deleteBaitSharePID";
 $ransomwarePaths['smbReadOnlyProcess'] = "/tmp/ransomware/smbReadOnlyProcess";
 
 ?>

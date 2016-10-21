@@ -66,13 +66,14 @@ $dict = file_get_contents("/usr/local/emhttp/plugins/ransomware.bait/superBait/d
 $dict = preg_replace("/[^A-Za-z0-9]/", ' ', $dict);
 $dictionary = explode(" ",$dict);
 
+@unlink($ransomwarePaths['baitShares']);
 logger("Creating Folder Structure");
 file_put_contents($ransomwarePaths['shareStatus'],"Creating Folder Structure");
 
 for ( $i = 0; $i < $numberShares; $i++ ) {
   while ( true ) {
     $basepath = "/mnt/user/$sharePrefix-".randomWord($dictionary)."/";
-    if ( ! isdir($path) ) {
+    if ( ! isdir($basepath) ) {
       mkdir($basepath);
       break;
     } 
@@ -117,16 +118,20 @@ foreach ($baitShares as $share) {
   
   foreach ($initialBait as $bait) {
     $linkArray[pathinfo($bait,PATHINFO_EXTENSION)] = $share."/".$bait;
+    if ( isfile("$share$bait") ) {
+      $baitShareFileList .= "$share$bait\n";
+    }
   }
   createBait($share);
   ++$completed;
   $timeElapsed = time() - $startTime;
   logger("Bait Files Created: $filecount (".intval($filecount / $timeElapsed)."/second) Completed: ".intval($completed / $total * 100)."%");
   file_put_contents($ransomwarePaths['shareStatus'],"Bait Files Created: $filecount (".intval($filecount / $timeElapsed)."/second) Completed: ".intval($completed / $total * 100)."%");
-
+  file_put_contents($ransomwarePaths['baitShareFileList'],$baitShareFileList);
+  
 }
 echo "estimate: ".($numberFoldersPerShare * $numberFiles * $numberLevels * $numberFinalFolders);
-exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/countBaitShares.php");
+
 @unlink($ransomwarePaths['shareStatus']);
 @unlink($ransomwarePaths['createSharePID']);
 

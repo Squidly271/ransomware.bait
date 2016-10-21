@@ -99,7 +99,14 @@ switch ($_POST['action']) {
         }
       }
     }
-            
+    
+    if ( ! $shareMessage ) {
+      if ( isfile($ransomwarePaths['sharePID']) ) {
+        $shareMessage = "<font color=green>Running</font>";
+      } else {
+        $shareMessage = "<font color=red>Not Running</font>";
+      }
+    }    
     if ( ( isfile($ransomwarePaths['filelist']) || isfile($ransomwarePaths['baitShares'])) && ! isfile($ransomwarePaths['deleteProgress']) && ! $running && ! isfile($ransomwarePaths['deleteBaitSharePID']) ) {
       $script .= "var deleteable = false;";
     } else {

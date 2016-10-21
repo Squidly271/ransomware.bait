@@ -253,7 +253,7 @@ while ( true ) {
 
   logger("Starting Background Monitoring Of Bait Files");
   while ( true ) {
-    @unlink("/tmp/ransomware/event");
+    @unlink($ransomwarePaths['event']);
     exec("inotifywait --fromfile /boot/config/plugins/ransomware.bait/filelist -e move,delete,delete_self,move_self,close_write --format %w -o ".$ransomwarePaths['event']." 2>&1 | logger -i");
     $tmpEvent = @file_get_contents("/tmp/ransomware/event");
     if ( ! trim($tmpEvent) ) {
