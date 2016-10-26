@@ -21,11 +21,9 @@ $shareSettings = $allSettings['shareSettings'];
 $(function() {
   $("#enableShareService").val("<?=$shareSettings['enableShareService']?>");
   $("#numberShares").val("<?=$shareSettings['numberShares']?>");
-  $("#numberFoldersPerShare").val("<?=$shareSettings['numberFoldersPerShare']?>");
-  $("#folderDepth").val("<?=$shareSettings['folderDepth']?>");
-  $("#numberBaitPerFolder").val("<?=$shareSettings['numberBaitPerFolder']?>");
   $("#shareRecreate").val("<?=$shareSettings['shareRecreate']?>");
   $("#sharePrefix").val("<?=$shareSettings['sharePrefix']?>");
+  $("#baitPlacement").val("<?=$shareSettings['baitPlacement']?>");
 });
 
 function shareGetSettings() {
@@ -75,21 +73,17 @@ function shareApply() {
 <tr>
   <td width=25%><b>Bait Share Prefix</b><br>This should be unique and not conflict with any of your "normal" share names as there is no guarantee that in the case of a conflict that the files contained will not get deleted</td>
   <td width=25%><input type='text' class='shareSettings' id='sharePrefix' onchange='validateBaitShares();'></td>
+</tr>
+<tr>
+  <td width=25%><b>Bait Share Placement</b></td>
+  <td width=25%><select class='shareSettings' id='baitPlacement' onchange='validateBaitShares();'>
+    <option value='random'>Alphabetically Random In Share List</option>
+    <option value='together'>Alphabetically Together In Share List</option>
+  </td>
+</tr>
 <tr>
   <td width=25%><b>Number Of Bait Shares To Create</b><br>(Recommended to use at least 2-3 times the number of "normal" shares you have)</td>
   <td width=25%><input type='number' style='width:50px' class='shareSettings' id='numberShares' onchange='validateBaitShares();'></td>
-</tr>
-<tr>
-  <td width=25%><b>Number Of Folders Per Share</b></td>
-  <td width=25%><input type='number' style='width:50px' class='shareSettings' id='numberFoldersPerShare' onchange='validateBaitShares();'></td>
-</tr>
-<tr>
-  <td width=25%><b>Depth Of Folders</b></td>
-  <td width=25%><input type='number' style='width:50px' class='shareSettings' id='folderDepth' onchange='validateBaitShares();'></td>
-</tr>
-<tr>
-  <td width=25%><b>Number Of Bait Files Per Folder</b></td>
-  <td width=25%><input type='number' style='width:50px' class='shareSettings' id='numberBaitPerFolder' onchange='validateBaitShares();'></td>
 </tr>
 <tr>
   <td><b>Recreate bait files on service stop / start:</b></td>

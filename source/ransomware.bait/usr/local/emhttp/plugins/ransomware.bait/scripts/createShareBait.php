@@ -45,10 +45,13 @@ if ( isfile($ransomwarePaths['baitShares']) ) {
   exit;
 }
 $numberShares = $settings['numberShares'];
-$numberFoldersPerShare = $settings['numberFoldersPerShare'];
-$numberLevels = $settings['folderDepth'];
+#$numberFoldersPerShare = $settings['numberFoldersPerShare'];
+$numberFoldersPerShare = 10;
+#$numberLevels = $settings['folderDepth'];
+$numberLevels = 10;
 $numberFinalFolders = $numberFoldersPerShare;
-$numberFiles = $settings['numberBaitPerFolder'];
+#$numberFiles = $settings['numberBaitPerFolder'];
+$numberFiles = 50;
 $sharePrefix = trim($settings['sharePrefix']);
 
 if ( ($numberShares * $numberFoldersPerShare * $numberLevels * $numberFiles) < 1 ) {
@@ -68,13 +71,17 @@ $dictionary = explode(" ",$dict);
 
 @unlink($ransomwarePaths['baitShares']);
 logger("Creating Folder Structure");
-file_put_contents($ransomwarePaths['shareStatus'],"Creating Folder Structure");
+shareStatus("Creating Folder Structure");
 
 for ( $i = 0; $i < $numberShares; $i++ ) {
   while ( true ) {
-    $basepath = "/mnt/user/$sharePrefix-".randomWord($dictionary)."/";
+    $tmpWord = strtolower(randomword($dictionary));
+    $filenameShare = ($settings['baitPlacement'] == "together") ? "$sharePrefix-$tmpWord/" : "$tmpWord-$sharePrefix/";
+#    $filenameShare = "$sharePrefix-".strtolower(randomWord($dictionary))."/";
+    $basepath = "/mnt/user/$filenameShare";
     if ( ! isdir($basepath) ) {
       mkdir($basepath);
+      @unlink("/boot/config/shares/$filenameShare.cfg");
       break;
     } 
   }
@@ -105,11 +112,12 @@ for ($kk = count($createFolder) -1 ; $kk >= 0; $kk--) {
   $createCount++;
 }
 
-file_put_contents($ransomwarePaths['shareStatus'],"Creating Bait Files");
+shareStatus("Creating Bait Files");
 logger("Creating Bait Files");
 $total = count($baitShares);
 $completed = 0;
 
+$percentCompleted = 0;
 $startTime = time();
 foreach ($baitShares as $share) {
   exec("cp /usr/local/emhttp/plugins/ransomware.bait/bait/* $share"); 
@@ -123,36 +131,46 @@ foreach ($baitShares as $share) {
     }
   }
   createBait($share);
+  if ( $linkError ) {
+    logger("Errors resulted in creating links.  Only created links will be monitored");
+  }
   ++$completed;
   $timeElapsed = time() - $startTime;
-  logger("Bait Files Created: $filecount (".intval($filecount / $timeElapsed)."/second) Completed: ".intval($completed / $total * 100)."%");
-  file_put_contents($ransomwarePaths['shareStatus'],"Bait Files Created: $filecount (".intval($filecount / $timeElapsed)."/second) Completed: ".intval($completed / $total * 100)."%");
+  $percentCompleted = intval($completed / $total * 100);
+  logger("Bait Files Created: $filecount (".intval($filecount / $timeElapsed)."/second) Completed: $percentCompleted%");
+  shareStatus("Bait Files Created: $filecount (".intval($filecount / $timeElapsed)."/second) Completed: $percentCompleted%");
   file_put_contents($ransomwarePaths['baitShareFileList'],$baitShareFileList);
   
 }
 echo "estimate: ".($numberFoldersPerShare * $numberFiles * $numberLevels * $numberFinalFolders);
 
-@unlink($ransomwarePaths['shareStatus']);
+clearShareStatus();
 @unlink($ransomwarePaths['createSharePID']);
 
 ##############################################################################################
 
 function createBait($path) {
-  global $numberFiles, $filecount, $linkArray, $ransomwarePaths;
+  global $numberFiles, $filecount, $linkArray, $ransomwarePaths, $linkError, $percentCompleted;
   
   $contents = array_diff(scandir($path),array(".",".."));
     
   foreach ($contents as $directory) {
     if ( is_dir($path.$directory."/") ) {
       createBait($path.$directory."/");
+      if ( $linkError ) return;
     }
-    file_put_contents($ransomwarePaths['shareStatus'],"Creating Bait Files: (so far, $filecount created)");
+    shareStatus("Creating Bait Files: (so far, $filecount created, $percentCompleted% done)");
   }
   for ( $i = 0; $i < $numberFiles; $i++ ) {
     $newFile = $path.randomFile();
     $newExtension = pathinfo($newFile,PATHINFO_EXTENSION);
     echo "Linking $newFile\n";
-    link($linkArray[$newExtension],$newFile);
+    if ( is_file($newFile) ) { continue; }
+    if ( ! link($linkArray[$newExtension],$newFile) ) {
+      logger("Unable to create a link.  Aborting any further link creation");
+      $linkError = true;
+      return false;
+    }
 #    exec("ln $linkArray[$newExtension] '$newFile'");  #create a hardlink
     ++$filecount;
   }

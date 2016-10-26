@@ -6,14 +6,14 @@
 #                                                       #
 #########################################################
 
-if ( isfile($ransomwarePaths['smbReadOnlyProcess']) ) {
-  exit;
-}
-
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
-smbReadOnly();
+if ( isfile($ransomwarePaths['smbReadOnlyProcess']) ) {
+  exit;
+}
+$settings = readSettingsFile();
+smbReadOnly($settings);
 
 @unlink($ransomwarePaths['smbReadOnlyProcess']);
 ?>

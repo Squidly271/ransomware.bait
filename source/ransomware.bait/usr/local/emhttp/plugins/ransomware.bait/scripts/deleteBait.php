@@ -7,18 +7,7 @@
 #########################################################
 
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
-
-function logger($string) {
-  shell_exec('logger ransomware protection:"'.$string.'"');
-}
-function isfile($filename) {
-  clearstatcache();
-  return is_file($filename);
-}
-function isdir($path) {
-  clearstatcache();
-  return is_dir($path);
-}
+require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 
 if ( isfile($ransomwarePaths['deleteProgress']) ) {
   logger("Deletion already in progress");
@@ -38,12 +27,15 @@ if ( $filelist ) {
   $allfiles = explode("\n",$filelist);
   foreach ( $allfiles as $baitFile) {
     if ( isfile($baitFile) ) {
+      baitStatus("Deleting $baitFile");
       @unlink($baitFile);
       ++$totalFiles;
     }
   }
 }
-@unlink($ransomwarePaths['startupStatus']);
+
+clearBaitStatus();
+
 logger("$totalFiles Bait Files Deleted");
 @unlink("/boot/config/plugins/ransomware.bait/filelist");
 @unlink($ransomwarePaths['deleteProgress']);

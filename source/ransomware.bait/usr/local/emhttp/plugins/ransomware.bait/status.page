@@ -102,6 +102,20 @@ function startBackground() {
   $("#startBackground").prop("disabled",true);
   $.post(URL,{action:'startServices'});
 }
+function deleteHistory() {
+  swal({
+    title: "Delete Attack History?",
+    text: "This will delete the cumulative attack history to date",
+    type: "warning",
+    showCancelButton: true,
+    showConfirmButton: true,
+    allowOutsideClick: true
+  }, function(isConfirm) {
+    if (isConfirm) {
+      $.post(URL,{action:'deleteHistory'});
+    }
+  });
+}
 
 function deleteBait() {
   swal({
@@ -140,7 +154,7 @@ function deleteBait() {
 <tr>
   <td width=25%><font size='3'>Total Bait Share Files Monitored:</td><td><span id='totalShareMonitored'>Unknown</span></td>
 <tr>
-  <td width=25%><font size='3'>Attack History</td><td><span id='smbHistory' style='display:none'><a onclick='viewHistory();' style='cursor:pointer'><font color='red'>Click here to display the attack history</font></a></span><span id='noSMBHistory'><font color='green'>No Attack History Found</font></span>
+  <td width=25%><font size='3'>Attack History</td><td><span id='smbHistory' style='display:none'><a onclick='viewHistory();' style='cursor:pointer'><font color='red'>Click here to display the attack history</font></a>&nbsp;&nbsp;<img style='width:20px;cursor:pointer' src="/plugins/ransomware.bait/images/delete-24.png" title='Delete Attack History' onclick='deleteHistory();'></span><span id='noSMBHistory'><font color='green'>No Attack History Found</font></span>
 <tr>
   <td width=25%><font size='3'>Logging:</td><td><a onclick='showLogging();' style='cursor:pointer'>Show Ransomware Protection Log</a></td>
 </tr>

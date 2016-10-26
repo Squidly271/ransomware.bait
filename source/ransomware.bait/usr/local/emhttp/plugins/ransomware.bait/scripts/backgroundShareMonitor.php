@@ -9,44 +9,16 @@
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
-function stopEverything($path) {
-  global $settings, $ransomwarePaths;
-  logger("attack detected on $path");
-  return;
-  
-  exec("/usr/bin/smbstatus",$output);
-  if ( $settings['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
-  if ( $settings['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
-  if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
-    exec("/usr/local/emhttp/plugins/ransomware.bait/script/smbReadOnly.php");
-  }
-  if ( $settings['stopArray'] == "true" ) {
-    logger("Stopping AFP");
-    exec("/etc/rc.d/rc.atalk stop");    
-    logger("Stopping NFS");
-    exec("/etc/rc.d/rc.nfsd stop");
-  }
-  notify("Ransomware Protection","Possible Ransomware Attack Detected","Possible Attack On $path","","alert");
-  logger("..");
-  logger("Possible Ransomware attack detected on file $path");
-  logger("SMB Status:");
-  file_put_contents($ransomwarePaths['smbStatusFile'],"******************************************************************************************",FILE_APPEND);
-  file_put_contents($ransomwarePaths['smbStatusFile'],"\r\n\r\nTime Of Attack:".date("r",time())."\r\n\r\n",FILE_APPEND);
-  file_put_contents($ransomwarePaths['smbStatusFile'],"Attacked File: $path\r\n\r\n",FILE_APPEND);
-  foreach($output as $statusLine) {
-    logger($statusLine);
-    file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
-  }
-  if ( $settings['stopScript'] ) {
-    exec($settings['stopScript']);
-  }
-}
 
 ################################################################################################
 
 $unRaidVars = parse_ini_file("/var/local/emhttp/var.ini");
 if ( strtolower($unRaidVars['mdState']) != "started" ) {
   logger("Array Not Started.  Exiting");
+  exit;
+}
+if ( !isdir("/mnt/user") ) {
+  logger("User Shares Must Be Enabled to use this plugin");
   exit;
 }
 
@@ -119,20 +91,20 @@ while (true) {
   logger($event[1]);
   switch ($event[1]) {
     case "DELETE":
-      stopEverything($eventFile);
+      stopEverything($eventFile,$allSettings['actions']);
       $stopFlag = true;
       break;
     case "MOVED_FROM":
-      stopEverything($eventFile);
+      stopEverything($eventFile,$allSettings['actions']);
       $stopFlag = true;
       break;
     case "MOVED_TO":
-      stopEverything($eventFile);
+      stopEverything($eventFile,$allSettings['actions']);
       $stopFlag = true;
       break;
     default:
       if ( ! isfile($eventFile) ) {
-        stopEverything($eventFile);
+        stopEverything($eventFile,$allSettings['actions'],$allSettings['actions']);
         $stopFlag = true;
         break;
       }
@@ -149,7 +121,7 @@ while (true) {
         sleep(1);
         if ( md5_file($eventFile) != $md5Array[$eventExtension]['md5'] ) {
           logger("md5 attack");
-          stopEverything($eventFile);
+          stopEverything($eventFile,$allSettings['actions']);
           $stopFlag = true;
           break;
         } else {
@@ -166,22 +138,24 @@ while (true) {
     continue;
   }
   #exit this shit if stop array is set
-  
-# an attack on one is an attack on everything, so delete the share
-
-  logger("Deleting the affected shares");
-  foreach ($baitShareList as $share) {
-    if ( ! isdir($share) ) {
-      continue;
+  if ( $allSettings['actions']['stopArray'] != "true" ) {
+    logger("Deleting the affected shares");
+    foreach ($baitShareList as $share) {
+      if ( ! isdir($share) ) {
+        continue;
+      }
+      if (startsWith($eventFile,$share) ) {
+        logger("Deleting $share");
+        file_put_contents($ransomwarePaths['shareStatus'],"Deleting $share");
+        exec("rm -rf ".escapeshellarg($share));
+        @unlink($ransomwarePaths['shareStatus']);
+      }
     }
-    if (startsWith($eventFile,$share) ) {
-      logger("Deleting $share");
-      file_put_contents($ransomwarePaths['shareStatus'],"Deleting $share");
-      exec("rm -rf ".escapeshellarg($share));
-      @unlink($ransomwarePaths['shareStatus']);
-    }
-  }
-    
+  } else {
+    @unlink($ransomwarePaths['sharePID']);
+    logger("Ransomware Bait Share Monitoring Exiting");
+    exit();
+  }  
 
   
 }

@@ -7,6 +7,61 @@
 
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
+function stopEverything($path,$settings) {
+  global $ransomwarePaths;
+  print_r($settings);
+  exec("/usr/bin/smbstatus",$output);
+  if ( $settings['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
+  if ( $settings['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
+  if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
+    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/smbReadOnly.php");
+  }
+  if ( $settings['stopArray'] == "true" ) {
+    logger("Stopping AFP");
+    exec("/etc/rc.d/rc.atalk stop");    
+    logger("Stopping NFS");
+    exec("/etc/rc.d/rc.nfsd stop");
+  }
+  notify("Ransomware Protection","Possible Ransomware Attack Detected","Possible Attack On $path","","alert");
+  logger("..");
+  logger("Possible Ransomware attack detected on file $path");
+  logger("SMB Status:");
+  file_put_contents($ransomwarePaths['smbStatusFile'],"******************************************************************************************",FILE_APPEND);
+  file_put_contents($ransomwarePaths['smbStatusFile'],"\r\n\r\nTime Of Attack:".date("r",time())."\r\n\r\n",FILE_APPEND);
+  file_put_contents($ransomwarePaths['smbStatusFile'],"Attacked File: $path\r\n\r\n",FILE_APPEND);
+  foreach($output as $statusLine) {
+    logger($statusLine);
+    file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
+  }
+  if ( $settings['stopScript'] ) {
+    exec($settings['stopScript']);
+  }
+}
+
+function shareStatus($statusMessage) {
+  global $ransomwarePaths;
+  
+  file_put_contents($ransomwarePaths['shareStatus'],$statusMessage);
+}
+
+function clearShareStatus() {
+  global $ransomwarePaths;
+  
+  @unlink($ransomwarePaths['shareStatus']);
+}
+
+function baitStatus($statusMessage) {
+  global $ransomwarePaths;
+  
+  file_put_contents($ransomwarePaths['startupStatus'],$statusMessage);
+}
+
+function clearBaitStatus() {
+  global $ransomwarePaths;
+  
+  @unlink($ransomwarePaths['startupStatus']);
+}
+
 ##################################################################
 #                                                                #
 # 2 Functions to avoid typing the same lines over and over again #
@@ -149,8 +204,8 @@ function scan($path) {
 #                                     #
 #######################################
 
-function smbReadOnly() {
-  global $ransomwarePaths,$settings;
+function smbReadOnly($settings) {
+  global $ransomwarePaths;
 
   # get the user list
   
@@ -174,9 +229,9 @@ function smbReadOnly() {
   if ( ! $shareList ) { $shareList = array(); }
   foreach ($shareList as $share) {
     $shareSettings = parse_ini_file("/boot/config/shares/$share");
-    $shareSettings['shareComment'] = "Read Only Mode.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
+    $shareSettings['shareComment'] = "Read Only Mode.  Restore normal settings via <a href='/Settings/Ransomware'>Ransomware Protection Settings</a>";
 # smb
-    if ( $settings['readOnlySMB'] == "true" ) {
+    if ( $settings['actions']['readOnlySMB'] == "true" ) {
       if ( $shareSettings['shareWriteList'] ) {
         $shareSettings['shareReadList'] = $shareSettings['shareWriteList'].",".$shareSettings['shareReadList'];
       }
@@ -187,7 +242,7 @@ function smbReadOnly() {
       }
     }
 # afp
-    if ( $settings['readOnlyAFP'] == "true" ) {
+    if ( $settings['actions']['readOnlyAFP'] == "true" ) {
       if ( $shareSettings['shareWriteListAFP'] ) {
         $shareSettings['shareReadListAFP'] = $shareSettings['shareWriteListAFP'].",".$shareSettings['shareReadListAFP'];
       }
@@ -204,37 +259,37 @@ function smbReadOnly() {
 # now handle disk shares
   exec("mkdir -p /boot/config/plugins/ransomware.bait/shareBackupDisks");
   copy("/boot/config/disk.cfg","/boot/config/plugins/ransomware.bait/shareBackupDisks/disk.cfg");
-  $shareSettings = parse_ini_file["/boot/config/disk.cfg"];
+  $shareSettings = @parse_ini_file("/boot/config/disk.cfg");
 
   for ($disk = 1; $disk <= 28; $disk++) {
-    $shareSettings["diskComment.$disk"] = "Read Only Mode.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
+    $shareSettings["diskComment.$disk"] = "Read Only Mode.  Restore normal settings via <a href='/Settings/Ransomware'>Ransomware Protection Settings</a>";
 #smb
-    if ( $settings['readOnlySMB'] == "true" ) {
+    if ( $settings['actions']['readOnlySMB'] == "true" ) {
       if ( $shareSettings["diskWriteList.$disk"] ) {
         $shareSettings["diskReadList.$disk"] = $shareSettings["diskWriteList.$disk"].",".$shareSettings["diskReadList.$disk"];
       }
       $shareSettings["diskWriteList.$disk"] = "";
-      if ( $shareSettings["diskSecurity.$disk"] == "public" ) {
+      if ( ($shareSettings["diskSecurity.$disk"] == "public") || ! $shareSettings["diskSecurity.$disk"] ) {
         $shareSettings["diskSecurity.$disk"] = "secure";
         $shareSettings["diskReadList.$disk"] = "$users";
       }
     }
 #afp
-    if ( $settings['readOnlyAFP'] == "true" ) {
+    if ( $settings['actions']['readOnlyAFP'] == "true" ) {
       if ( $shareSettings["diskWriteListAFP.$disk"] ) {
         $shareSettings["diskReadListAFP.$disk"] = $shareSettings["diskWriteListAFP.$disk"].",".$shareSettings["diskReadListAFP.$disk"];
       }
       $shareSettings["diskWriteListAFP.$disk"] = "";
-      if ( $shareSettings["diskSecurityAFP.$disk"] == "public" ) {
+      if ( ($shareSettings["diskSecurityAFP.$disk"] == "public") || ! $shareSettings["diskSecurityAFP.$disk"] ) {
         $shareSettings["diskSecurityAFP.$disk"] = "secure";
         $shareSettings["diskReadListAFP.$disk"] = "$users";
       }
     }
   }
 #handle the cache drive
-  $shareSettings["cacheComment"] = "Read Only Mode.  Restore normal settings via <a href='/Settings/ransomware'>Ransomware Protection Settings</a>";
+  $shareSettings["cacheComment"] = "Read Only Mode.  Restore normal settings via <a href='/Settings/Ransomware'>Ransomware Protection Settings</a>";
 #smb
-  if ( $settings['readOnlySMB'] == "true" ) {
+  if ( $settings['actions']['readOnlySMB'] == "true" ) {
     if ( $shareSettings["cacheWriteList"] ) {
       $shareSettings["cacheReadList"] = $shareSettings["cacheWriteList"].",".$shareSettings["cacheReadList"];
     }
@@ -245,7 +300,7 @@ function smbReadOnly() {
     }
   }
 #afp
-  if ( $settings['readOnlyAFP'] == "true" ) {
+  if ( $settings['actions']['readOnlyAFP'] == "true" ) {
     if ( $shareSettings["cacheWriteListAFP"] ) {
       $shareSettings["cacheReadListAFP"] = $shareSettings["cacheWriteListAFP"].",".$shareSettings["cacheReadListAFP"];
     }
@@ -266,7 +321,8 @@ function smbReadOnly() {
     } 
   }
   
-  #exec("/etc/rc.d/rc.samba restart");
+  if ( $settings['actions']['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
+  if ( $settings['actions']['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
 }
 
 function createIniFile($shareSettings) {

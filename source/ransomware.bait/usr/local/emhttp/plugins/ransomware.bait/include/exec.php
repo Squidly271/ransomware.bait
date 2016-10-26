@@ -66,7 +66,7 @@ switch ($_POST['action']) {
     rename($ransomwarePaths['smbShares'],"/etc/samba/smb-shares.conf");
     exec("rm -rf /boot/config/shares");
     exec("mkdir -p /boot/config/shares");
-    exec("cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares");
+    exec("cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares/");
     exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackup");
     copy("/boot/config/plugins/ransomware.bait/shareBackupDisk");
     @unlink($ransomwarePaths['detected']); # also kill the event
@@ -82,32 +82,41 @@ switch ($_POST['action']) {
     $settings = readSettingsFile();
     $message = @file_get_contents($ransomwarePaths['startupStatus']);
     $shareMessage = @file_get_contents($ransomwarePaths['shareStatus']);
+    $running = isfile($ransomwarePaths['PID']) || isfile($ransomwarePaths['sharePID']) || isfile($ransomwarePaths['deleteBaitSharePID']);
+
+    if ( $running ) {
+      $startable = "true";
+      $stoppable = "false";
+    } else {
+      $startable = "false";
+      $stoppable = "true";
+    }
+    if ( isfile($ransomwarePaths['deleteBaitSharePID']) ) {
+      $stoppable = "true";
+    }
+    if (( $settings['baitFile']['enableService'] == "false" ) && ( $settings['shareSettings']['enableShareService'] == "false" ) ){
+      $startable = "true";
+    }
+    $script .= "var startable = $startable; var stoppable = $stoppable;";
     
     if ( ! $message ) {
       if ( isfile($ransomwarePaths['PID']) ) {
         $message =  "<font color=green>Running</font>";
-        $running = true;
-        $script .= "var stoppable = false;";
-        $script .= "var startable = true;";
-        } else {
+      } else {
         $message =  "<font color=red>Not Running</font>";
-        $script .= "var stoppable = true;";
-        if ( $settings['baitFile']['enableService'] == "true" ) {
-          $script .= "var startable = false;";
-        } else {
-          $script .= "var startable = true;";
-        }
       }
     }
     
     if ( ! $shareMessage ) {
       if ( isfile($ransomwarePaths['sharePID']) ) {
-        $shareMessage = "<font color=green>Running</font>";
+        if ( isdir("/proc/".file_get_contents($ransomwarePaths['sharePID'])) ) {
+          $shareMessage = "<font color=green>Running</font>";
+        }
       } else {
         $shareMessage = "<font color=red>Not Running</font>";
       }
     }    
-    if ( ( isfile($ransomwarePaths['filelist']) || isfile($ransomwarePaths['baitShares'])) && ! isfile($ransomwarePaths['deleteProgress']) && ! $running && ! isfile($ransomwarePaths['deleteBaitSharePID']) ) {
+    if ( ( isfile($ransomwarePaths['filelist']) || isfile($ransomwarePaths['baitShares'])) && ! $running) {
       $script .= "var deleteable = false;";
     } else {
       $script .= "var deleteable = true;";
@@ -163,6 +172,9 @@ switch ($_POST['action']) {
   case 'deleteBait':
     exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
     break;
+  case 'deleteHistory':
+    @unlink($ransomwarePaths['smbStatusFile']);
+    break;
   case 'validateShareSettings':
     $settings = getSettings();
     $settings['sharePrefix'] = trim($settings['sharePrefix']);
@@ -178,7 +190,7 @@ switch ($_POST['action']) {
     if ( $settings['numberShares'] < 1 ) {
       $comment .= "Number of shares to create must be at least 1<br>";
     }
-    if ( $settings['numberFoldersPerShare'] < 1 ) {
+/*     if ( $settings['numberFoldersPerShare'] < 1 ) {
       $comment .= "Number of folders per share must be at least 1<br>";
     }
     if ( $settings['folderDepth'] < 1 ) {
@@ -186,12 +198,12 @@ switch ($_POST['action']) {
     }
     if ( $settings['numberBaitPerFolder'] < 1 ) {
       $comment .= "Number of bait files per folder must be at least 1<br>";
-    }
+    } */
     $totalBaitToCreate = $settings['numberShares'] * $settings['numberFoldersPerShare'] * $settings['numberFoldersPerShare'] * $settings['folderDepth'] * $settings['numberBaitPerFolder'] * $settings['numberBaitPerFolder'];
  $script = "<script>";
     if ( ! $comment ) {
       $script .= "$('#shareStatus').html('ok');";
-      $script .= "$('#shareComments').html('Total bait files to create is approximately $totalBaitToCreate');";
+ #     $script .= "$('#shareComments').html('Total bait files to create is approximately $totalBaitToCreate');";
     } else {
       if ( $settings['enableShareService'] == "false" ) {
         $script .= "$('#shareStatus').html('ok');";

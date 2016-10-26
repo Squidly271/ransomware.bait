@@ -9,38 +9,6 @@
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
-function stopEverything($path) {
-  global $settings, $ransomwarePaths;
-  
-  exec("/usr/bin/smbstatus",$output);
-  if ( $settings['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
-  if ( $settings['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
-  if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
-    exec("/usr/local/emhttp/plugins/ransomware.bait/script/smbReadOnly.php");
-  }
-  if ( $settings['stopArray'] == "true" ) {
-    logger("Stopping AFP");
-    exec("/etc/rc.d/rc.atalk stop");    
-    logger("Stopping NFS");
-    exec("/etc/rc.d/rc.nfsd stop");
-  }
-  notify("Ransomware Protection","Possible Ransomware Attack Detected","Possible Attack On $path","","alert");
-  logger("..");
-  logger("Possible Ransomware attack detected on file $path");
-  logger("SMB Status:");
-  file_put_contents($ransomwarePaths['smbStatusFile'],"******************************************************************************************",FILE_APPEND);
-  file_put_contents($ransomwarePaths['smbStatusFile'],"\r\n\r\nTime Of Attack:".date("r",time())."\r\n\r\n",FILE_APPEND);
-  file_put_contents($ransomwarePaths['smbStatusFile'],"Attacked File: $path\r\n\r\n",FILE_APPEND);
-  foreach($output as $statusLine) {
-    logger($statusLine);
-    file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
-  }
-  if ( $settings['stopScript'] ) {
-    exec($settings['stopScript']);
-  }
-}
-
-
 function createBait($path) {
   global $settings,$appdata, $root, $rootContents, $totalBait, $errorBait, $excludedShares;
   
@@ -81,7 +49,7 @@ function createBait($path) {
       }
       $destination = "$path/$entry/$baitFile";
       $source = "$root/$baitFile";
-
+      baitStatus("Creating bait files in $path/$entry");
       if ( !copy($source,$destination) ) {
         $errorBait[] = $destination;
         @unlink($destination);
@@ -100,7 +68,10 @@ if ( strtolower($unRaidVars['mdState']) != "started" ) {
   logger("Array Not Started.  Exiting");
   exit;
 }
-
+if ( ! isdir("/mnt/user") ) {
+  logger("User Shares MUST be enabled to use this plugin");
+  exit;
+}
 $allSettings = readSettingsFile();
 if ( ! $allSettings ) {
   logger("No Settings Defined For Ransomware Protection - Exiting");
@@ -109,9 +80,6 @@ if ( ! $allSettings ) {
 
 $settings                = $allSettings['baitFile'];
 $settings['stopArray']   = $allSettings['actions']['stopArray'];  # Because this module was programmed prior to separate sections in settings
-$settings['readOnlySMB'] = $allSettings['actions']['readOnlySMB'];
-$settings['readOnlyAFP'] = $allSettings['actions']['readOnlyAFP'];
-$settings['stopScript']  = $allSettings['actions']['stopScript'];
 $settings['baitShares']  = $allSettings['shareSettings']['sharePrefix'];
 
 if ( ! isfile("/usr/bin/inotifywait") ) {
@@ -207,7 +175,7 @@ while ( true ) {
     } else {
       $logMsg = "Creating bait files, all folders of all shares.  This may take a bit";
     }
-    file_put_contents($ransomwarePaths['startupStatus'],$logMsg);
+    baitStatus($logMsg);
     logger($logMsg);
     if ( isdir("/mnt/user") ) {
       $userBase = "/mnt/user";
@@ -262,23 +230,24 @@ while ( true ) {
       exit;
     }
     if ( isfile($ransomwarePaths['stoppingService']) ) {
-      unlink($ransomwarePaths['stoppingService']);
+      @unlink($ransomwarePaths['stoppingService']);
+      @unlink($ransomwarePaths['PID']);
       exit;
     }      
     $affectedFile = trim(file_get_contents($ransomwarePaths['event']));
     file_put_contents($ransomwarePaths['detected'],$affectedFile);
     if ( ! isfile($affectedFile) ) {
-      stopEverything($affectedFile);
+      stopEverything($affectedFile,$allSettings['actions']);
       break;
     } else {
       if ( md5_file($affectedFile) != $md5Array[basename($affectedFile)] ) {
-        stopEverything($affectedFile);
+        stopEverything($affectedFile,$allSettings['actions']);
         break;
       } else {
         logger("Event on $affectedFile, but MD5 matches.  Checking again in 1 second");
         sleep(1);
         if ( md5_file($affectedFile) != $md5Array[basename($affectedFile)] ) {
-          stopEverything($affectedFile);
+          stopEverything($affectedFile,$allSettings['actions']);
           break;
         } else {
           logger("Event on $affectedFile, but MD5 matches.  Remonitoring");
@@ -292,6 +261,8 @@ while ( true ) {
     break;
   }
 }
+clearBaitStatus();
+logger("Exited Ransomware Bait File Service");
 @unlink($ransomwarePaths['PID']);
 
 

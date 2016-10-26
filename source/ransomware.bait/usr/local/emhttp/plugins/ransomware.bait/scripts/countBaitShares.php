@@ -17,6 +17,10 @@ if ( ! isfile($ransomwarePaths['baitShares']) ) {
   logger("Could not find any bait shares to inventory.  Exiting");
   exit();
 }
+if ( ! isdir("/mnt/user") ) {
+  logger("User Shares Must Be enabled to use this plugin");
+  exit;
+}
 file_put_contents($ransomwarePaths['baitShareCountPID'],getmypid());
 file_put_contents($ransomwarePaths['baitShareCount'],"Calculating");
 
