@@ -36,22 +36,7 @@ echo "*** The reboots are so that there is no possibility of inadvertent trippin
 <!--
 The 'post-install' script
 -->
-<FILE Run="/bin/bash">
-<INLINE>
-rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version;')
-echo "Stopping the service and deleting pre-existing bait files.  This may take a bit"
-/usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
-echo "Restarting the background service"
-/usr/local/emhttp/plugins/ransomware.bait/scripts/startBackgroundMonitor.sh
-echo "--------------------------------"
-echo "Ransomware Protection Installed"
-echo "This plugin requires inotify-tools (available within the NerdPack plugin) to operate"
-echo "Copyright 2016, Andrew Zawadzki"
-echo "Version: &version;"
-echo "--------------------------------"
 
-</INLINE>
-</FILE>
 
 <!--
 The 'remove' script.
