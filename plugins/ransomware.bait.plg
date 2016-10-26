@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2016.10.10">
+<!ENTITY version   "2016.10.25">
 <!ENTITY md5       "67ee4ba4ab8809e03967c2ef7baa814a">
 <!ENTITY launch    "Settings/ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -13,44 +13,26 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
-###2016.10.10###
-- Minor Bug Fixes
+An update is available for this plugin, but you MUST first uninstall this plugin, and then reinstall from Community Applications.
+After uninstalling this plugin, REBOOT your server to remove all possible traces of this old plugin.
 
-###2016.10.09###
-- Added: Separate read-only SMB / AFP Settings
-- Added: Disk shares now set to be read-only
-- Added: Check and increase inotify watches if required
-- Changed: Deletion of bait files now only happens when service starts up
-- Added: Log when inotifywait is actually ready, willing, and able
-- Fixed: Remove possibility of orphaned bait files on reboots
-- Added: Ability to exclude folders
-
-###2016.10.07###
-- Beta: Stop AFP along with SMB
-- Added: Realtime popups of status within Ransomware's Settings
-- Enhanced: Faster Stopping of SMB
-- Fixed: An attack followed by a reboot wouldn't let you restore proper permissions
-
-###2016.10.06###
-- Add in PDF bait file
-- Add in SMB Readonly mode option
-- Add in ability to set Readonly mode anytime
-- Add in ability to include appdata for bait
-- Add in ability to change emhttp communication port
-- Add in logging to determine where attack originated from
-
-###2016.10.02###
-Initial Release
+Ideally you would also want to stop the ransomware service, reboot, and then uninstall and reboot.
 </CHANGES>
 
 <!--
 The 'source' file.
 -->
-<FILE Name="/boot/config/plugins/&name;/&name;-&version;-x86_64-1.txz" Run="upgradepkg --install-new">
-<URL>https://raw.github.com/&github;/master/archive/&name;-&version;-x86_64-1.txz</URL>
-<MD5>&md5;</MD5>
-</FILE>
+<FILE Run="/bin/bash">
+<INLINE>
+echo "The new update to Ransomware protection REQUIRES you to first uninstall this version."
+echo "Ideally, you will want to stop the ransomware service, REBOOT your server"
+echo "And then uninstall ransomware plugin, followed by another REBOOT"
+echo "At that point, you can reinstall the Ransomware Protection Plugin via Community Applications"
+echo ""
+echo "*** The reboots are so that there is no possibility of inadvertent tripping of the plugin ***"
 
+</INLINE>
+</FILE>
 <!--
 The 'post-install' script
 -->
@@ -78,7 +60,7 @@ The 'remove' script.
 <INLINE>
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
 echo "Deleting bait files.  This may take a bit"
-/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.php
+/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh
 removepkg &name;-&version;-x86_64-1
 rm -rf &plugdir;
 rm -rf /boot/config/plugins/&name;
