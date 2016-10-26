@@ -16,9 +16,9 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 $smbHistory = is_file($ransomwarePaths['smbStatusFile']) ? "true" : "false";
 $allSettings = readSettingsFile();
 
-$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/ransomware.bait.plg");
+$installedVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /var/log/plugins/newransomware.bait.plg");
 if ( is_file("/tmp/plugins/community.applications.plg") ) {
-  $upgradeVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /tmp/plugins/ransomware.bait.plg");
+  $upgradeVersion = exec("/usr/local/emhttp/plugins/dynamix.plugin.manager/scripts/plugin version /tmp/plugins/newransomware.bait.plg");
 } else {
   $upgradeVersion = "0";
 }
