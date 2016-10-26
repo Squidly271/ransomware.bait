@@ -82,6 +82,8 @@ echo "Deleting bait files.  This may take a bit"
 removepkg &name;-&version;-x86_64-1
 rm -rf &plugdir;
 rm -rf /boot/config/plugins/&name;
+echo
+echo "You should reboot your server to remove all traces of the Ransomware Protection Plugin"
 </INLINE>
 </FILE> 
 </PLUGIN>
