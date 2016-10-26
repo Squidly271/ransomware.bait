@@ -4,7 +4,7 @@
 <!ENTITY author    "Andrew Zawadzki">
 <!ENTITY version   "2016.10.10">
 <!ENTITY md5       "67ee4ba4ab8809e03967c2ef7baa814a">
-<!ENTITY launch    "Settings/ransomware">
+<!ENTITY launch    "Settings/Ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/&github;/master/plugins/new&name;.plg">
@@ -13,6 +13,11 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2016.10.25###
+- Major overhaul to the UI
+- Incorporate specialized Bait Shares
+- unRaid 6.2.1+ only
+
 ###2016.10.10###
 - Minor Bug Fixes
 
