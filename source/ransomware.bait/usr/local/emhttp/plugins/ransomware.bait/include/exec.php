@@ -21,7 +21,7 @@ function getSettings() {
 
 switch ($_POST['action']) {
   case 'applyBaitFileSettings':
-    $settings = parse_ini_file($ransomwarePaths['settings'],true);
+    $settings = my_parse_ini_file($ransomwarePaths['settings'],true);
     $settings['baitFile'] = getSettings();
     file_put_contents($ransomwarePaths['settings'],create_ini_file($settings,true));
     file_put_contents($ransomwarePaths['settingsRAM'],create_ini_file($settings,true));
@@ -29,7 +29,7 @@ switch ($_POST['action']) {
     echo "done";
     break;
   case 'applyActionSettings':
-    $settings = parse_ini_file($ransomwarePaths['settings'],true);
+    $settings = my_parse_ini_file($ransomwarePaths['settings'],true);
     $settings['actions'] = getSettings();
     file_put_contents($ransomwarePaths['settings'],create_ini_file($settings,true));
     file_put_contents($ransomwarePaths['settingsRAM'],create_ini_file($settings,true));
@@ -37,7 +37,7 @@ switch ($_POST['action']) {
     echo "done";
     break;
   case 'applyShareSettings':
-    $settings = parse_ini_file($ransomwarePaths['settings'],true);
+    $settings = my_parse_ini_file($ransomwarePaths['settings'],true);
     $settings['shareSettings'] = getSettings();
     file_put_contents($ransomwarePaths['settings'],create_ini_file($settings,true));
     file_put_contents($ransomwarePaths['settingsRAM'],create_ini_file($settings,true));

@@ -62,6 +62,20 @@ function clearBaitStatus() {
   @unlink($ransomwarePaths['startupStatus']);
 }
 
+####################################################################################################
+#                                                                                                  #
+# 2 Functions because unRaid includes comments in .cfg files starting with # in violation of PHP 7 #
+#                                                                                                  #
+####################################################################################################
+
+function my_parse_ini_file($file,$mode=false,$scanner_mode=INI_SCANNER_NORMAL) {
+  return parse_ini_string(preg_replace('/^#.*\\n/m', "", @file_get_contents($file)),$mode,$scanner_mode);
+}
+
+function my_parse_ini_string($string, $mode=false,$scanner_mode=INI_SCANNER_NORMAL) {
+  return parse_ini_string(preg_replace('/^#.*\\n/m', "", $string),$mode,$scanner_mode);
+}
+
 ##################################################################
 #                                                                #
 # 2 Functions to avoid typing the same lines over and over again #
@@ -106,7 +120,7 @@ function notify($event,$subject,$description,$message,$type="normal") {
 
 ################################################################
 #                                                              #
-# Creates an INI file parseable by parse_ini_file              #
+# Creates an INI file parseable by my_parse_ini_file              #
 # Set $mode to be true when dealing with multi-dimension array #
 #                                                              #
 ################################################################
@@ -115,16 +129,16 @@ function readSettingsFile() {
   global $ransomwarePaths;
 
   if ( isfile($ransomwarePaths['settingsRAM']) ) {
-    $user = @parse_ini_file($ransomwarePaths['settingsRAM'],true);
+    $user = @my_parse_ini_file($ransomwarePaths['settingsRAM'],true);
   }
   if ( isfile($ransomwarePaths['settings']) ) {
     copy($ransomwarePaths['settings'],$ransomwarePaths['settingsRAM']);
-    $user = @parse_ini_file($ransomwarePaths['settingsRAM'],true);
+    $user = @my_parse_ini_file($ransomwarePaths['settingsRAM'],true);
   }
   if ( ! $user ) {
     $user = array();
   }
-  $default = @parse_ini_file($ransomwarePaths['defaultSettings'],true);
+  $default = @my_parse_ini_file($ransomwarePaths['defaultSettings'],true);
   $defaultKeys = array_keys($default);
   foreach ($defaultKeys as $keys) {
     $entries = array_keys($default[$keys]);
@@ -159,7 +173,7 @@ function create_ini_file($settings,$mode=false) {
 
 function getAppData() {
   $excludedShares = array();
-  $dockerOptions = @parse_ini_file("/boot/config/docker.cfg");
+  $dockerOptions = @my_parse_ini_file("/boot/config/docker.cfg");
   $sharename = $dockerOptions['DOCKER_APP_CONFIG_PATH'];
   if ( $sharename ) {
     $sharename = str_replace("/mnt/cache/","",$sharename);
@@ -228,7 +242,7 @@ function smbReadOnly($settings) {
   $shareList = scan("/boot/config/shares/");
   if ( ! $shareList ) { $shareList = array(); }
   foreach ($shareList as $share) {
-    $shareSettings = parse_ini_file("/boot/config/shares/$share");
+    $shareSettings = my_parse_ini_file("/boot/config/shares/$share");
     $shareSettings['shareComment'] = "Read Only Mode.  Restore normal settings via <a href='/Settings/Ransomware'>Ransomware Protection Settings</a>";
 # smb
     if ( $settings['actions']['readOnlySMB'] == "true" ) {
@@ -259,7 +273,7 @@ function smbReadOnly($settings) {
 # now handle disk shares
   exec("mkdir -p /boot/config/plugins/ransomware.bait/shareBackupDisks");
   copy("/boot/config/disk.cfg","/boot/config/plugins/ransomware.bait/shareBackupDisks/disk.cfg");
-  $shareSettings = @parse_ini_file("/boot/config/disk.cfg");
+  $shareSettings = @my_parse_ini_file("/boot/config/disk.cfg");
 
   for ($disk = 1; $disk <= 28; $disk++) {
     $shareSettings["diskComment.$disk"] = "Read Only Mode.  Restore normal settings via <a href='/Settings/Ransomware'>Ransomware Protection Settings</a>";

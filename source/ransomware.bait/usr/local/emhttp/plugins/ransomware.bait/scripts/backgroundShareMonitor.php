@@ -12,7 +12,7 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 ################################################################################################
 
-$unRaidVars = parse_ini_file("/var/local/emhttp/var.ini");
+$unRaidVars = my_parse_ini_file("/var/local/emhttp/var.ini");
 if ( strtolower($unRaidVars['mdState']) != "started" ) {
   logger("Array Not Started.  Exiting");
   exit;
