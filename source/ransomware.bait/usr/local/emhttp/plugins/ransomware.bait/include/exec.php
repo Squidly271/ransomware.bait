@@ -68,13 +68,18 @@ switch ($_POST['action']) {
     exec("mkdir -p /boot/config/shares");
     exec("cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares/");
     exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackup");
-    copy("/boot/config/plugins/ransomware.bait/shareBackupDisk");
+    copy("/boot/config/plugins/ransomware.bait/shareBackupDisk","/boot/config/disk.cfg");
+    exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackupDisk");
+    exec("cp /boot/config/plugins/ransomware.bait/udBackup/* /etc/samba/unassigned-shares");
+    exec("rm -rf /boot/config/plugins/ransomware.bait/udBackup");
+    @unlink($ransomwarePaths['smbReadOnlyProcess']);
     @unlink($ransomwarePaths['detected']); # also kill the event
     exec("/etc/rc.d/rc.samba stop");
     break;
   case 'setReadOnly':
     $settings['readOnlySMB'] = "true";
     $settings['readOnlyAFP'] = "true";
+    file_put_contents($ransomwarePaths['smbReadOnlyProcess'],"yo");
     smbReadOnly();
     logger("SMB/AFP now set to be read-only per user request");
     break;
@@ -171,6 +176,7 @@ switch ($_POST['action']) {
     break;
   case 'deleteBait':
     exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh");
+    exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBaitShare.sh");
     break;
   case 'deleteHistory':
     @unlink($ransomwarePaths['smbStatusFile']);

@@ -54,18 +54,37 @@ function killPID($pidFile,$description) {
 
 }
 
+function rogueKill($path,$description,$pidFile=false) {
+  exec("ps aux | grep $path | grep -v grep",$output);
+  foreach ($output as $line) {
+    $line = preg_replace("/[[:blank:]]+/"," ",$line);
+    $lineParse = explode(" ",$line);
+    file_put_contents("/tmp/ransomware/tempPID",$lineParse[1]);
+    killPID("/tmp/ransomware/tempPID",$description);
+  }
+  if ( $pidFile ) {
+    @unlink($pidFile);
+  }
+}
+
 exec("mkdir -p /tmp/ransomware/");
 file_put_contents($ransomwarePaths['stoppingService'],"stopping");
 @unlink($ransomwarePaths['detected']);
 
 killPID($ransomwarePaths['PID'],"ransomware protection service");
 killPID($ransomwarePaths['deletePID'],"ransomware deletion process");
+killPID($ransomwarePaths['deleteBaitSharePID'],"ransomware share deletion process");
 killPID($ransomwarePaths['createSharePID'],"ransomeware bait share creation process");
 killPID($ransomwarePaths['baitShareCountPID'],"ransomware bait share count process");
 killPID($ransomwarePaths['sharePID'],"ransomware bait share monitor process");
 
+# now do the emergency kill routines just in case somehow somewhere the main processes are still running
 
-@unlink($ransomwarePaths['detected']);
+rogueKill("/usr/local/emhttp/plugins/ransomware.bait/scripts/backgroundmonitor.php","rogue ransomware file process",$ransomwarePaths['PID']);
+rogueKill("/usr/local/emhttp/plugins/ransomware.bait/scripts/backgroundShareMonitor.php","rogue ransomware share process",$ransomwarePaths['sharePID']);
+rogueKill("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBaitShare.php","rogue share deletion process",$ransomwarePaths['deleteBaitSharePID']);
+rogueKill("/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.php","rogue file deletion process",$ransomwarePaths['deletePID']);
+rogueKill("/usr/local/emhttp/plugins/ransomware.bait/scripts/countBaitShares.php","rogue share count process",$ransomwarePaths['baitShareCountPID']);
 
 # if the tmp file exists, service is being stopped prior to completion, so save the damn file so that the bait doesn't get orphaned
 if ( isfile("/tmp/ransomware/filelist") ) {

@@ -44,7 +44,7 @@ $(function() {
 
   $('#enableService').val('<?=$settings['enableService']?>');
   $('#folders').val('<?=$settings['folders']?>');
-
+  $("#preserveMTime").val('<?=$settings['preserveMTime']?>');
   $('#excludeAppdata').val('<?=$settings['excludeAppdata']?>');
   $('#excluded').val('<?=$settings['excluded']?>');
   $('#recreate').val('<?=$settings['recreate']?>');
@@ -200,6 +200,15 @@ function setExcluded() {
     <option value='false'>No - Use the existing bait files</option>
     </select>
   </td>
+</tr>
+<tr>
+  <td><b>Attempt to preserve folder modification times</b></td>
+  <td><select class='settings' id='preserveMTime' onchange='enableApply();'>
+    <option value='true'>Yes</option>
+    <option value='false'>No</option>
+    </select>
+  </td>
+</tr>
 </tr>
 </table>
 

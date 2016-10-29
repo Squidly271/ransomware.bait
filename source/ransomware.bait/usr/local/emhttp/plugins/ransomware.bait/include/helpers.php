@@ -9,13 +9,15 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 function stopEverything($path,$settings) {
   global $ransomwarePaths;
-  print_r($settings);
+
   exec("/usr/bin/smbstatus",$output);
   if ( $settings['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
   if ( $settings['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
   if ( ($settings['readOnlySMB'] == "true") || ($settings['stopArray'] == "true") || ($settings['readOnlyAFP'] == "true") ) {
     exec("/usr/local/emhttp/plugins/ransomware.bait/scripts/smbReadOnly.php");
   }
+# stop it again just in case unRaid restarted it in the interim
+
   if ( $settings['stopArray'] == "true" ) {
     logger("Stopping AFP");
     exec("/etc/rc.d/rc.atalk stop");    
@@ -25,18 +27,31 @@ function stopEverything($path,$settings) {
   notify("Ransomware Protection","Possible Ransomware Attack Detected","Possible Attack On $path","","alert");
   logger("..");
   logger("Possible Ransomware attack detected on file $path");
-  logger("SMB Status:");
+
   file_put_contents($ransomwarePaths['smbStatusFile'],"******************************************************************************************",FILE_APPEND);
   file_put_contents($ransomwarePaths['smbStatusFile'],"\r\n\r\nTime Of Attack:".date("r",time())."\r\n\r\n",FILE_APPEND);
   file_put_contents($ransomwarePaths['smbStatusFile'],"Attacked File: $path\r\n\r\n",FILE_APPEND);
-  foreach($output as $statusLine) {
-    logger($statusLine);
-    file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
+  
+  $shareCFG = my_parse_ini_file("/boot/config/share.cfg");
+  if ( $shareCFG['shareSMBEnabled'] == "yes" ) {
+    logger("SMB Status:");
+    foreach($output as $statusLine) {
+      logger($statusLine);
+      file_put_contents($ransomwarePaths['smbStatusFile'],$statusLine."\r\n",FILE_APPEND);
+    }
+  } else {
+    logger("SMB Not Enabled.  Cannot display SMB status");
   }
   if ( $settings['stopScript'] ) {
     exec($settings['stopScript']);
   }
 }
+
+######################################################
+#                                                    #
+# Bunch of functions to deal with the status display #
+#                                                    #
+######################################################
 
 function shareStatus($statusMessage) {
   global $ransomwarePaths;
@@ -112,18 +127,11 @@ function notify($event,$subject,$description,$message,$type="normal") {
   shell_exec($command);
 }
 
-#########################################################
-#                                                       #
-# Returns an array of all of the appdata shares present #
-#                                                       #
-#########################################################
-
-################################################################
-#                                                              #
-# Creates an INI file parseable by my_parse_ini_file              #
-# Set $mode to be true when dealing with multi-dimension array #
-#                                                              #
-################################################################
+##############################################################################
+#                                                                            # 
+# Function to read the plugin's ini file (and merge it with the default.ini) #
+#                                                                            #
+##############################################################################
 
 function readSettingsFile() {
   global $ransomwarePaths;
@@ -151,6 +159,13 @@ function readSettingsFile() {
   return $user;
 }
 
+################################################################
+#                                                              #
+# Creates an INI file parseable by parse_ini_file              #
+# Set $mode to be true when dealing with multi-dimension array #
+#                                                              #
+################################################################
+
 function create_ini_file($settings,$mode=false) {
   if ( $mode ) {
     $keys = array_keys($settings);
@@ -170,6 +185,12 @@ function create_ini_file($settings,$mode=false) {
   }
   return $iniFile;
 }
+
+#########################################################
+#                                                       #
+# Returns an array of all of the appdata shares present #
+#                                                       #
+#########################################################
 
 function getAppData() {
   $excludedShares = array();
@@ -335,6 +356,25 @@ function smbReadOnly($settings) {
     } 
   }
   
+  # now work on UD mounted shareSecurity
+  
+  exec("mkdir -p ".$ransomwarePaths['udBackup']);
+  $udShares = scan("/etc/samba/unassigned-shares");
+  foreach ($udShares as $udShare) {
+    copy("/etc/samba/unassigned-shares/$udShare",$ransomwarePaths['udBackup']."/$udShare");
+    $iniFile = my_parse_ini_file("/etc/samba/unassigned-shares/$udShare",true);    
+    $keys = array_keys($iniFile);
+    foreach ($keys as $key) {
+      $iniFile[$key]['valid users'] = "";
+    }
+    $newConfig = create_ini_file($iniFile,true);
+    # now reformat it to be the same as before
+    $newConfig = str_replace('"',"",$newConfig);
+    $newConfig = str_replace("="," = ",$newConfig);
+    
+    file_put_contents("/etc/samba/unassigned-shares/$udShare",$newConfig);
+  }
+    
   if ( $settings['actions']['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
   if ( $settings['actions']['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
 }
@@ -363,6 +403,12 @@ function isdir($path) {
   clearstatcache();
   return is_dir($path);
 }
+
+############################################################################################
+#                                                                                          #
+# Function to get $_POST settings (easier than typing the whole thing over and over again) #
+#                                                                                          #
+############################################################################################
 
 function getPost($setting,$default) {
   return isset($_POST[$setting]) ? urldecode(($_POST[$setting])) : $default;

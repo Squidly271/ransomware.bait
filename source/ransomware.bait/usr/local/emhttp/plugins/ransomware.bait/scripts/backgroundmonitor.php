@@ -10,7 +10,12 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 
 function createBait($path) {
-  global $settings,$appdata, $root, $rootContents, $totalBait, $errorBait, $excludedShares;
+  global $settings,$appdata, $root, $rootContents, $totalBait, $errorBait, $excludedShares, $dirArray;
+  
+  if ( $settings['preserveMTime'] == "true" ) {
+    $dirArray[$path]['dir'] = $path;
+    $dirArray[$path]['mtime'] = filemtime($path);
+  }
   
   $contents = scan($path);
 
@@ -184,6 +189,22 @@ while ( true ) {
     }
     unset($errorBait);
     createBait($userBase);
+    
+    if ( $settings['preserveMTime'] ) {
+      file_put_contents("/tmp/ransomware/tmpScript1.sh","#!/bin/bash\n");
+      $allDisks = array_diff(scandir("/mnt"),array("user","user0","disks",".",".."));
+      foreach ($dirArray as $dir) {
+        foreach ( $allDisks as $disk) {
+          $testPath = str_replace("/mnt/user","/mnt/$disk",$dir['dir']);
+          if ( isdir($testPath) ) {
+            file_put_contents("/tmp/ransomware/tmpScript1.sh","touch ".escapeshellarg($testPath)." -d @".$dir['mtime']."\n", FILE_APPEND);
+          }
+        }
+      }
+      exec("chmod +x /tmp/ransomware/tmpScript1.sh");
+      exec("/tmp/ransomware/tmpScript1.sh");    
+    }
+    
     file_put_contents($ransomwarePaths['priorCreationMode'],$settings['folders']);
     file_put_contents($ransomwarePaths['priorCreationExclude'],$settings['excluded']);
     exec("mkdir -p /boot/config/plugins/ransomware.bait");

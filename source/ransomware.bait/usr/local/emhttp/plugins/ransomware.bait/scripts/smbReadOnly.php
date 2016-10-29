@@ -15,5 +15,4 @@ if ( isfile($ransomwarePaths['smbReadOnlyProcess']) ) {
 $settings = readSettingsFile();
 smbReadOnly($settings);
 
-@unlink($ransomwarePaths['smbReadOnlyProcess']);
 ?>
