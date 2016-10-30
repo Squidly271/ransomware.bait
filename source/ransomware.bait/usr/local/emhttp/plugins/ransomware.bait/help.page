@@ -2,6 +2,161 @@ Menu="Ransomware:9"
 Icon="lock.png"
 Title="Help / Manual"
 ---
-<font size='4'>Work In Progress</font>
+<style>
 
----<br><br>This detection plugin creates so-called "bait" files either within all folders of a share or only within the root rolder of each share (note that any appdata folder is specifically excluded)  If those files should change (ie: become encrypted) or if they are deleted/renamed (which seems to be how most ransomware malware operates), then SMB will be immediately stopped to prevent further encryption to your files)<br>In the unlikely event of a naming conflict between the bait files and pre-existing files already on the array, the original files will not be touched, and they will not be monitored for changes<br><br>
+.back-to-top {
+  background: none;
+  margin: 0;
+  position: fixed;
+  bottom: 50px;
+  right: 0;
+  width: 70px;
+  height: 70px;
+  z-index: 100;
+  display: none;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+</style>
+<script>
+
+jQuery(document).ready(function() {
+  var offset = 250;
+  var duration = 500;
+  jQuery(window).scroll(function() {
+    if (jQuery(this).scrollTop() > offset) {
+      jQuery('.back-to-top').fadeIn(duration);
+    } else {
+      jQuery('.back-to-top').fadeOut(duration);
+    }
+  });
+
+  jQuery('.back-to-top').click(function(event) {
+    event.preventDefault();
+    jQuery('html, body').animate({scrollTop: 0}, duration);
+    return false;
+  })
+});
+
+</script><p id='helpPage'></p>
+<br><center><a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>Plugin Support Thread</a></center><br><br>
+<center><image src='/plugins/ransomware.bait/images/biglock.png'>
+<font size='4' color='purple'>Ransomware Protection</font><br></center>
+<font size='4' color='purple'>Manual Contents</font><br><br>
+<font size='3'>
+<a href='#summary'>Summary</a><br>
+<a href='#status'>Protection Status</a><br>
+<a href='#baitFile'>Bait File Creation</a><br>
+<a href='#baitShare'>Bait Share Creation</a><br>
+<a href='#actions'>Actions</a><br>
+<a href='#attack'>What Do I Do If An Attack Happens</a><br>
+<a href='#credits'>Credits</a><br>
+</font>
+<br><br><hr>
+<p id='summary'><font color='purple' size='4'>Summary</font></p>
+<br><br>
+<em>Ransomware Protection</em> is a specialized type of anti-virus program which is designed to detect when a ransomware attack is happening on your server and immediately stop it before any further damage can happen.  (A ransomware attack is where a ransomware virus/malware program running on your desktop computer begins to encrypt all of your files on your server and will then demand a ransom to provide you with the decryption key)
+
+The way this plugin operates is through <em>bait</em> files.  These are specialized files named so that if any deletion to those files happen (the ransomware renamed the file and then encrypted it) or modification (the ransomware encrypted the file but left the name the same) will trigger the attack response.
+
+There are 2 modes which this plugin operates in (Both modes can operate simultaneously).  Bait files existing <em>within</em> your existing shares, and specialized bait shares.  Each mode will be explained in turn.
+
+<b>Note</b>  Each section of this plugin has its own separate <em>Apply</em> button that must be utilized to apply any changes<br><br>
+<hr>
+<p id='status'><font color='purple' size='4'>Protection Status</font></p>
+<br>
+<br>
+
+<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zps6c0k0etk.png' width=500px></center></td><td>
+
+<table>
+<tr><td width=25%><b>Ransomware Protection Version</b></td><td>Displays the currently running version (if any updates are available, it will also display here, a link to the support thread, and a popup detailing the credits for the plugin)</td></tr>
+<tr><td><b>Bait File Monitor Status</td><td>Displays info about the bait file monitor process></td></tr>
+<tr><td><b>Total Bait File Monitored</b></td><td>Displays the current number of bait files which are monitored within your "normal" shares</td></tr>
+<tr><td><b>Total Bait Share Files Monitored</b></td><td>Displays the current number of bait files which are monitored within the specialized bait shares</td></tr>
+<tr><td><b>Attack History</b></td><td>If an attack has been detected, a link will appear which will display the details about the attack (optionally allows you to also delete the history record of all attacks)</td></tr>
+<tr><td><b>Logging</b></td><td>This allows you to display the log of everything within Ransomware Protection since the last reboot.  This information is all contained within unRaid's syslog</td></tr>
+<tr><td><b>Creation Errors</b></td><td>This will display a link detailing any errors creating the bait files within your normal user shares.  These errors will be caused either by full disks or a name collision</td></tr>
+<tr><td><b>The Lock Icon</b></td><td>At any time, if you click the lock icon, your server will immediately go into <em>read-only</em> mode where all network shares through either SMB or AFP will be set to read-only mode.  Useful if you want to manually trigger read-only for one reason or another.  After read-only has been set either through clicking the icon, or via a detected ransomware attack, the lock will be replaced by a different link which will allow you to restore <em>read/write</em> access</td></tr>
+</table>
+</td></tr>
+</table>
+</table>
+<input type='button' value='Start Background Services'>  If the service is not currently running (and the selected settings are valid), pressing this will start the services<br><br>
+<input type='button' value='Stop Background Services'>  If the service(s) are running, pressing this button will stop them<br><br>
+<input type='button' value='Delete Previous Bait Files'>  When the service is stopped, if Bait Files are present on the array, pressing this will delete them
+
+<hr>
+<p id='baitFile'><font color='purple' size='4'>Bait File Creation</font></p>
+<br><br>
+<b>Bait File Creation</b> is where you change the settings to put the bait files within your <em>existing</em> shares.
+<br><br>
+<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zpssdrms2cc.png' width='500px'></td><td>
+
+<table>
+<tr><td width=25%><b>Utilize Bait File Service</b></td><td>When set to "yes", bait files will be placed within your existing user shares.  Set it to no to have the plugin not place any bait files within the user shares</td></tr>
+<tr><td><b>Bait File Placement</b></td><td>Set this to Root of shares to only have bait files placed in the top level of the shares.  Setting it to <em>All Folders> will place the bait files within each folder.  <br>Note that any inadvertent modification or deletion of a bait file will trigger the attack response, so unless you are completely in control of your server, you are probably best off setting the placement to be in the root of the shares (although this will decrease the chances of successfully catching an attack before major damage is done)</td></tr>
+<tr><td><b>Exclude Appdata Shares</b></td><td>Setting this to yes will exclude any bait files from going into your docker appdata / Community Applications Appdata backup shares.<br>Note that regardless of this setting, bait files will <em>never</em> be placed within all folders of your appdata shares due to the vastly increased chances of inadvertent tripping caused by one of your apps deleting those files</td></tr>
+<tr><td><b>Additional Excluded Shares</b></td><td>Use the <em>Excluded Share Browser</em> to select shares which you do not want any bait files to be created within.  <br>If you want only a subfolder of a share to not have any bait files go into it, then you must manually type in the <em>full</em>path to the subfolder.  (Entries are separated via commas)   There is also no need to exclude any bait shares (they will display here) as they are always excluded</td></tr>
+<tr><td><b>Recreate bait files on service stop / start</b></td><td>Due to the vastly increased processing required for continually monitoring your server for new shares, folders etc, any newly created folders will <em>not</em> have bait files created within them automatically.  Setting this option to "yes" will recreate the bait files everytime the service is stopped and restarted (ie: array stop / restart / reboots) to then monitor bait files within those newly created folders</td></tr>
+<tr><td><b>Attempt to preserve folder modification times</b></td><td>Normally, when writing any file (bait file) to a folder, the folder's modification time will also be updated.  Selecting "yes" here will preserve the folder's existing modification time.  Useful if you habitually sort your folders by the modification time in Windows Explorer, but it will increase the processing time of creation a bit.</td></tr>
+</table>
+</table>
+<br>In the unlikely event of a name collision of bait files vs legitimate file, then the legitimate file will not be overwritten or monitored for changes, but a creation error will be logged.
+<br>
+<b>Advanced</b>  You also have the option of using your own custom named bait files.  To do this, create a folder called <b>/config/plugins/ransomware.bait/bait</b> and within that folder place your custom bait files.
+<hr>
+<p id='baitShare'><font color='purple' size='4'>Bait Share Creation</font></p>
+<br><br>
+The second mode of operation for this plugin involves the creation of specialized Bait Shares.  This attempts to inundate the ransomware attack program with far more bait files than legitimate document files stored on your array.<br>
+Each bait share is composed of ~50,000 randomly named bait files within numerous randomly named folders within randomly named shares.  Even though there are ~50,000 bait files per share, the net disk space used on your array is only around <b>100Meg per share</b> due to the use of hardlinks)
+<br><br><br>
+<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zpsy5wj8sfl.png' width='500px'></td><td>
+<table>
+<tr><td width=25%><b>Utilize Bait Share Service</b></td><td>When set to yes, the specialized bait shares will be placed onto your array</td></tr>
+<tr><td><b>Bait Share Prefix</b></td><td>For easy identification, each bait share will be named with this setting as a prefix</td></tr>
+<tr><td><b>Bait Share Placement</b></td><td>To keep all of the bait shares together within the list, select <em>Alphabetically Together In Share List</em>.  Using this will append a random name after the Prefix.  For the best protection against an attack, you should select the <em>Random Placement</em> method which will prepend a random word to the beginning of the Prefix so that the generated shares are scattered throughout the share list</td></tr>
+<tr><td><b>Number Of Bait Shares To Create</b></td><td>Set this to as many as you like.  Each share will take up about 100Meg of disk space.  You really would want this number to exceed the number of legitimate shares that you already have on your system</td></tr>
+<tr><td><b>Recreate bait files on service stop / start</b></td><td>This will recreate the shares with every array stop / start / reboot.<br><b>Note</b>  The speed of generation of the bait files differs significantly depending upon which version of unRaid you are using.  Users of unRaid 6.2 will see approximately 100 files created per second.  Users of unRaid 6.3+ will see approximately 4000 files created per second (due to PHP7 being included in 6.3).  All generation takes place in the background, so your server will not be significantly affected either way</td></tr>
+</table></td></tr></table>
+
+<hr>
+<p id='actions'><font color='purple' size='4'>Actions</font></p>
+<br><br>
+<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zpsawzvxbfk.png' width='500px'></td><td>
+<table>
+<tr><td width=25%><b>Set SMB / AFP to be read-only on detection</b></td><td>Selecting yes here will immediately reconfigure your shares to be read-only once an attack is detected (There will be an interruption of your network access to the service lasting up to about a minute</td></tr>
+<tr><td><b>Stop Array On Detection</b></td><td>Selecting yes here will stop your array when an attack occurs.  Note that since the SMB / AFP services are actually stopped rather late in unRaid's array stop routines, this plugin immediately stops those services automatically if an attack occurs</td></tr>
+<tr><td><b>Path To Custom Stop Script</b></td><td>Clicking in this box will bring up a file browser to allow you to select a custom script that will execute after an attack is detected.  Use this script to handle things like other notification agents, beeping through your system speaker, etc</td></tr>
+</table>
+</table>
+
+Regardless of the settings here, a standard Error Level notification is <em>always</em> sent out if an attack occurs.  It is highly recommended to configure dynamix notifications.
+
+<p id='attack'><font color='purple' size='4'>What Do I Do If An Attack Happens</font></p>
+
+This plugin can only help protect the files on your unRaid server.  It cannot help protect any of your other networked computers / devices.
+
+<b>Unless you are 100% sure that the tripping of this plugin was NOT accidental by a legitimate network user, then do NOT simply assume that all is OK with the computers on your network.</b>
+
+Ransomware attacks can originate from <b>any</b> device on your home network.  This includes computers, cell-phones, tablets, IoT devices, etc.  When an attack occurs, look at the attack logs which will (if SMB is enabled) possibly give you clues as to the origin of the attack.  Immediately check that originating IP for viruses, local files on that device for encryption, etc.<br>
+If you have been attacked by ransomware and your files on your other computers have been encrypted, physically disconnect the affected device from the network completely until your are 150% positive that all traces of the ransomware virus have been removed. Research thoroughly before making a decision on whether to pay the ransom or not (There may be a decryption tool available)
+
+<hr>
+<p id='credits'><font color='purple' size='4'>Credits</font></p>
+<br><br>
+<table>
+<tr><td width=60px><img src='http://www.jrj-socrates.com/Cartoon%20Pics/Misc/Tripping%20The%20Rift/Chode_300.gif' width='50px';height='48px'></td><td width=15%><strong>Andrew Zawadzki</strong></td><td>Main Development</td></tr>
+<tr><td></td><td><strong>RobJ</strong></td><td>Additional Ideas</td></tr>
+<tr><td><img src='https://upload.wikimedia.org/wikipedia/commons/3/34/Bram_Stoker_1906.jpg' width='50px'></td><td><strong>Bram Stoker</strong></td><td><em>Dracula</em> &copy;1897 (copyright expired)<br>Random word dictionary</br>Read it <a href='http://literature.org/authors/stoker-bram/dracula/index.html'>Here</a></td></tr>
+</table>
+    
+<br>
+<center><em><font size='1'>Copyright 2016 Andrew Zawadzki</font></em></center>
+<center><a href='https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=7M7CBCVU732XG' target='_blank'><img src='https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif'></a></center>
+<br><center><a href='http://lime-technology.com/forum/index.php?topic=52462.0' target='_blank'>Plugin Support Thread</a></center>
+<a href="#" class="back-to-top" style="display: inline;">
+<img src='/plugins/ransomware.bait/images/up.png' style='width:50px;height:50px' href="#" class="back-to-top"></img>
+</a>
+

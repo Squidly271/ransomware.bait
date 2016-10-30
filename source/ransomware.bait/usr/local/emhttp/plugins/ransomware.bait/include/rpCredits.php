@@ -32,6 +32,11 @@ $rpCredits = "
         <td><strong>RobJ</strong></td>
         <td>Additional Ideas</td>
       </tr>
+      <tr>
+        <td><img src='https://upload.wikimedia.org/wikipedia/commons/3/34/Bram_Stoker_1906.jpg' width='50px'></td>
+        <td><strong>Bram Stoker</strong></td>
+        <td><em>Dracula</em> &copy;1897 (copyright expired)<br>Random word dictionary</br>Read it <a href='http://literature.org/authors/stoker-bram/dracula/index.html'>Here</a></td>
+      </tr>
     </table></center>
     <br>
     <center><em><font size='1'>Copyright 2016 Andrew Zawadzki</font></em></center>
