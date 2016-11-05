@@ -41,6 +41,9 @@ function createBait($path) {
       continue;
     }
     if ( (isdir("$path/$entry")) && ( $settings['folders'] != "root" ) ) {
+      if ( $settings['skipHidden'] == "true" && startsWith($entry,".") ) {
+        continue;
+      }
       createBait("$path/$entry");
     }
     if ( isfile("$path/$entry") ) {

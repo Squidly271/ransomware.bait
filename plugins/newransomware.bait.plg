@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2016.10.30">
-<!ENTITY md5       "45c771728830850f0d563675d474e6bf">
+<!ENTITY version   "2016.11.04">
+<!ENTITY md5       "32f2890c740397e93493ea9c3dc25bbe">
 <!ENTITY launch    "Settings/Ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
@@ -13,6 +13,9 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2016.11.04###
+- Added: Ability to automatically exclude hidden folders
+
 ###2016.10.30###
 - Added: Full Manual
 - Fixed: Compatibility with Dynamix Bleeding Edge plugin
