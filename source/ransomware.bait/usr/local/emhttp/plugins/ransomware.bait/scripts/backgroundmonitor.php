@@ -40,6 +40,9 @@ function createBait($path) {
     if ( $flag ) {
       continue;
     }
+    if ( $entry == ".Recycle.Bin" ) {
+      continue;
+    }
     if ( (isdir("$path/$entry")) && ( $settings['folders'] != "root" ) ) {
       if ( $settings['skipHidden'] == "true" && startsWith($entry,".") ) {
         continue;

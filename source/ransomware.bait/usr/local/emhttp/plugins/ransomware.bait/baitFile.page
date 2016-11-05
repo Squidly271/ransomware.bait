@@ -178,7 +178,7 @@ function setExcluded() {
   </td>
 </tr>
 <tr>
-  <td><b>Exclude AppData Shares</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded<br><?=$appdataList?></td>
+  <td><b>Exclude AppData Shares</b><br>Note that when placing baitfiles within ALL subfolders, appdata shares will always be excluded.  Additionally, any <em>.Recycle.Bin</em> folders created by the Recycle Bin plugin will always be excluded<br><?=$appdataList?></td>
   <td><select class='settings' id='excludeAppdata' onchange='enableApply();'>
     <option value='true'>Yes</option>
     <option value='false'>No</option>
