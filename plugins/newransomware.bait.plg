@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2016.11.27">
-<!ENTITY md5       "0c46f98a61b8b499080024c0a2e3181f">
+<!ENTITY version   "2016.11.27a">
+<!ENTITY md5       "808a5f408d91b73dbe9c2db5633b66eb">
 <!ENTITY launch    "Settings/Ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
@@ -141,9 +141,7 @@ The 'remove' script.
 echo "Stopping Services"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
 echo "Deleting bait files.  This may take a bit"
-/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh
-echo "Deleting bait shares.  This will run in the background and possibly take a number of minutes"
-/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBaitShare.sh
+/usr/local/emhttp/plugins/ransomware.bait/scrpts/deleteAllBait.sh >/dev/null 2>&1
 if [ -d "/boot/config/plugins/ransomware.bait/shareBackup"];
 then
   echo "Resetting SMB permissions to normal"
