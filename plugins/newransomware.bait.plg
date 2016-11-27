@@ -163,6 +163,7 @@ fi
 removepkg &name;-&version;-x86_64-1
 rm -rf &plugdir;
 rm -rf /boot/config/plugins/&name;
+rm -rf /tmp/ransomware
 echo
 echo "You should reboot your server to remove all traces of the Ransomware Protection Plugin"
 </INLINE>
