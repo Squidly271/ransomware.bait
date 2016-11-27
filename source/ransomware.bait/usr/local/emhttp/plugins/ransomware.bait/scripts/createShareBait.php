@@ -203,7 +203,7 @@ function randomWord($wordArray) {
     }
     break;
   }
-  return $word;
+  return strtolower($word);
 }
 
 function randomArray($inputArray) {
