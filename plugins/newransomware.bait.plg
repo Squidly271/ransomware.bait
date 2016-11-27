@@ -141,7 +141,9 @@ The 'remove' script.
 echo "Stopping Services"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
 echo "Deleting bait files.  This may take a bit"
-/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh
+/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.php
+echo "Deleting bait shares.  This may take a few minutes"
+/usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBaitShare.php
 if [ -d "/boot/config/plugins/ransomware.bait/shareBackup"];
 then
   echo "Resetting SMB permissions to normal"
