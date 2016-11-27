@@ -138,6 +138,7 @@ The 'remove' script.
 -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE>
+echo "Stopping Services"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
 echo "Deleting bait files.  This may take a bit"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/deleteBait.sh
