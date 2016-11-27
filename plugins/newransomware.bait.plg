@@ -144,7 +144,7 @@ echo "Deleting bait files.  This may take a bit"
 if [ -d "/boot/config/plugins/ransomware.bait/shareBackup"];
 then
   echo "Resetting SMB permissions to normal"
-  echo "There will be an interruption in SMB access to your server"
+  echo "There will be an interruption in access to your server"
   mv /tmp/ransomware/smbShares-orig /etc/samba/smb-shares.conf
   rm -rf /boot/config/shares
   mkdir -p /boot/config/shares
