@@ -22,6 +22,8 @@ if ( ! $allSettings ) {
 }
 
 $settings = $allSettings['shareSettings'];
+if ( ! $settings['hideBaitShare'] ) { $settings['hideBaitShare'] = "yes"; }
+
 if ( $settings['enableShareService'] != "true" ) {
   logger("Bait Share Service Not Enabled.  Exiting");
   exit;
@@ -150,7 +152,9 @@ clearShareStatus();
 ##############################################################################################
 
 function createBait($path) {
-  global $numberFiles, $filecount, $linkArray, $ransomwarePaths, $linkError, $percentCompleted;
+  global $numberFiles, $filecount, $linkArray, $ransomwarePaths, $linkError, $percentCompleted, $settings;
+  
+  $hideBait = ($settings['hideBaitShare'] == "yes") ? "." : "";
   
   $contents = array_diff(scandir($path),array(".",".."));
     
@@ -162,7 +166,7 @@ function createBait($path) {
     shareStatus("Creating Bait Files: (so far, $filecount created, $percentCompleted% done)");
   }
   for ( $i = 0; $i < $numberFiles; $i++ ) {
-    $newFile = $path.randomFile();
+    $newFile = $path.$hideBait.randomFile();
     $newExtension = pathinfo($newFile,PATHINFO_EXTENSION);
     echo "Linking $newFile\n";
     if ( is_file($newFile) ) { continue; }
@@ -175,7 +179,6 @@ function createBait($path) {
     ++$filecount;
   }
 }
-
 
 function randomFile() {
   global $fileExtensions, $separatorList, $dictionary;
@@ -193,7 +196,6 @@ function randomFile() {
   $filename .= ".$extension";
   return $filename;
 }
-
   
 function randomWord($wordArray) {
   while (true) {
@@ -209,6 +211,4 @@ function randomWord($wordArray) {
 function randomArray($inputArray) {
   return $inputArray[mt_rand(0,count($inputArray)-1)];
 }
-
-    
 ?>

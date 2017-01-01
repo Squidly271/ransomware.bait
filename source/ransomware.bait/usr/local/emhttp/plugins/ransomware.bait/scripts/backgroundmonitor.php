@@ -12,6 +12,8 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/paths.php");
 function createBait($path) {
   global $settings,$appdata, $root, $rootContents, $totalBait, $errorBait, $excludedShares, $dirArray;
   
+  $hideBait = ( $settings['hideBait'] == "yes" ) ? "." : "";
+  
   if ( $settings['preserveMTime'] == "true" ) {
     $dirArray[$path]['dir'] = $path;
     $dirArray[$path]['mtime'] = filemtime($path);
@@ -54,11 +56,11 @@ function createBait($path) {
     }
 
     foreach ($rootContents as $baitFile) {
-      if ( isfile("$path/$entry/$baitFile") ) {
-        $errorBait[] = "$path/$entry/$baitFile";
+      if ( isfile("$path/$entry/$hideBait$baitFile") ) {
+        $errorBait[] = "$path/$entry/$hideBait$baitFile";
         continue;
       }
-      $destination = "$path/$entry/$baitFile";
+      $destination = "$path/$entry/$hideBait$baitFile";
       $source = "$root/$baitFile";
       baitStatus("Creating bait files in $path/$entry");
       if ( !copy($source,$destination) ) {
@@ -66,7 +68,7 @@ function createBait($path) {
         @unlink($destination);
       } else {
         ++$totalBait;
-        file_put_contents("/tmp/ransomware/filelist","$path/$entry/$baitFile\n",FILE_APPEND);
+        file_put_contents("/tmp/ransomware/filelist","$path/$entry/$hideBait$baitFile\n",FILE_APPEND);
       }
     }
   }
@@ -92,6 +94,10 @@ if ( ! $allSettings ) {
 $settings                = $allSettings['baitFile'];
 $settings['stopArray']   = $allSettings['actions']['stopArray'];  # Because this module was programmed prior to separate sections in settings
 $settings['baitShares']  = $allSettings['shareSettings']['sharePrefix'];
+
+if ( ! $settings['hideBait'] ) {
+  $settings['hideBait'] = "yes";
+}
 
 if ( ! isfile("/usr/bin/inotifywait") ) {
   logger("inotify tools not installed.  Install it via NerdPack plugin available within Community Applications");

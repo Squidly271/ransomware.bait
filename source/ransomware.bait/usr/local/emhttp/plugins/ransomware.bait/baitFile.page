@@ -21,6 +21,9 @@ $inotifyInstalled = is_file("/usr/bin/inotifywait") ? "true" : "false";
 
 $allSettings = readSettingsFile();
 $settings = $allSettings['baitFile'];
+if ( ! $settings['hideBait'] ) {
+  $settings['hideBait'] = "yes";
+}
 
 $event = trim(@file_get_contents($ransomwarePaths['detected']));
 
@@ -32,8 +35,6 @@ $event = trim(@file_get_contents($ransomwarePaths['detected']));
 
 $(function() {
   $('.ransomwareProtectionVersion').html('<?=$installedVersion?>');
-
-
 
   $("#excludedFoldersList").fileTree({
     root: "/mnt/user",
@@ -49,6 +50,7 @@ $(function() {
   $('#excluded').val('<?=$settings['excluded']?>');
   $('#recreate').val('<?=$settings['recreate']?>');
   $('#skipHidden').val('<?=$settings['skipHidden']?>');
+  $('#hideBait').val('<?=$settings['hideBait']?>');
   
   if ( '<?=$inotifyInstalled?>' == 'false' ) {
     swal({
@@ -204,6 +206,14 @@ function setExcluded() {
     <option value='true'>Yes</option>
     <option value='false'>No - Use the existing bait files</option>
     </select>
+  </td>
+</tr>
+<tr>
+  <td><b>Hide Bait Files</b></td>
+  <td><select class='settings' id='hideBait' onchange='enableApply();'>
+    <option value='yes'>Yes</option>
+	<option value='no'>No</option>
+	</select>
   </td>
 </tr>
 <tr>

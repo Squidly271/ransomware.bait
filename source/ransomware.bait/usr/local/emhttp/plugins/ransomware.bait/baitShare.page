@@ -15,6 +15,8 @@ require_once("/usr/local/emhttp/plugins/ransomware.bait/include/helpers.php");
 $allSettings = readSettingsFile();
 $shareSettings = $allSettings['shareSettings'];
 
+if ( ! $shareSettings['hideBaitShare'] ) $shareSettings['hideBaitShare'] = "yes";
+
 ?>
 <script>
 
@@ -24,6 +26,7 @@ $(function() {
   $("#shareRecreate").val("<?=$shareSettings['shareRecreate']?>");
   $("#sharePrefix").val("<?=$shareSettings['sharePrefix']?>");
   $("#baitPlacement").val("<?=$shareSettings['baitPlacement']?>");
+  $("#hideBaitShare").val("<?=$shareSettings['hideBaitShare']?>");
 });
 
 function shareGetSettings() {
@@ -84,6 +87,14 @@ function shareApply() {
 <tr>
   <td width=25%><b>Number Of Bait Shares To Create</b><br>(Recommended to use at least 2-3 times the number of "normal" shares you have)</td>
   <td width=25%><input type='number' style='width:50px' class='shareSettings' id='numberShares' onchange='validateBaitShares();'></td>
+</tr>
+<tr>
+  <td width=25%><b>Hide Bait Files</b></td>
+  <td width=25%><select class='shareSettings' id='hideBaitShare' onchange='validateBaitShares();'>
+    <option value='yes'>Yes</option>
+    <option value='no'>No</option>
+    </select>
+  </td>
 </tr>
 <tr>
   <td><b>Recreate bait files on service stop / start:</b></td>
