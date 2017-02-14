@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2017.01.01">
+<!ENTITY version   "2017.02.13">
 <!ENTITY md5       "c3c7c4ffe07b949b72142850b87e6f0f">
 <!ENTITY launch    "Settings/Ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
@@ -13,6 +13,10 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2017.02.13###
+- Fixed: Suppress error message on uninstall
+- Fixed: Restore permissions on uninstall (if in tripped state)
+
 ###2017.01.01###
 - Allow bait files to be hidden
 
@@ -148,7 +152,7 @@ echo "Stopping Services"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
 echo "Deleting bait files.  This may take a bit"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/deleteAllBait.sh
-if [ -d "/boot/config/plugins/ransomware.bait/shareBackup"];
+if [ -d "/boot/config/plugins/ransomware.bait/shareBackup" ];
 then
   echo "Resetting SMB permissions to normal"
   echo "There will be an interruption in access to your server"
