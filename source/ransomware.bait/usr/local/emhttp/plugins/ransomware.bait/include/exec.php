@@ -68,8 +68,8 @@ switch ($_POST['action']) {
     exec("mkdir -p /boot/config/shares");
     exec("cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares/");
     exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackup");
-    copy("/boot/config/plugins/ransomware.bait/shareBackupDisk","/boot/config/disk.cfg");
-    exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackupDisk");
+    copy("/boot/config/plugins/ransomware.bait/shareBackupDisks/disk.cfg","/boot/config/disk.cfg");
+    exec("rm -rf /boot/config/plugins/ransomware.bait/shareBackupDisks");
     exec("cp /boot/config/plugins/ransomware.bait/udBackup/* /etc/samba/unassigned-shares");
     exec("rm -rf /boot/config/plugins/ransomware.bait/udBackup");
     @unlink($ransomwarePaths['smbReadOnlyProcess']);

@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2017.02.13">
-<!ENTITY md5       "c3c7c4ffe07b949b72142850b87e6f0f">
+<!ENTITY version   "2017.05.21">
+<!ENTITY md5       "1b9b510dd99137f0f381d7f2b9be45c2">
 <!ENTITY launch    "Settings/Ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
@@ -13,6 +13,9 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2017.05.21
+- Fixed: Disk share settings not properly restoring
+
 ###2017.02.13###
 - Fixed: Suppress error message on uninstall
 - Fixed: Restore permissions on uninstall (if in tripped state)
@@ -128,6 +131,11 @@ The 'post-install' script
 -->
 <FILE Run="/bin/bash">
 <INLINE>
+if [ -e /boot/config/plugins/ransomware.bait/shareBackupDisks/disk.cfg ]
+then
+  sed -i '/diskComment/d' /boot/config/plugins/ransomware.bait/shareBackupDisks/disk.cfg
+  sed -i '/diskComment/d' /boot/config/disk.cfg
+fi
 rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version;')
 echo "Stopping the service"
 /usr/local/emhttp/plugins/ransomware.bait/scripts/stopService.php
@@ -161,8 +169,8 @@ then
   mkdir -p /boot/config/shares
   cp /boot/config/plugins/ransomware.bait/shareBackup/* /boot/config/shares/
   rm -rf /boot/config/plugins/ransomware.bait/shareBackup
-  cp /boot/config/plugins/ransomware.bait/shareBackupDisk /boot/config/disk.cfg
-  rm -rf /boot/config/plugins/ransomware.bait/shareBackupDisk
+  cp /boot/config/plugins/ransomware.bait/shareBackupDisks /boot/config/disk.cfg
+  rm -rf /boot/config/plugins/ransomware.bait/shareBackupDisks
   cp /boot/config/plugins/ransomware.bait/udBackup/* /etc/samba/unassigned-shares
   rm -rf /boot/config/plugins/ransomware.bait/udBackup
   /etc/rc.d/rc.samba stop

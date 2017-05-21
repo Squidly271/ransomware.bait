@@ -106,7 +106,7 @@ function resetSMBPermissions(reason) {
       $("#readOnlyMode").hide();
       $("#setReadOnlyMode").show();
       $.post(URL,{action:'resetSMBPermissions'});
-      swal("Permissions Reset","The SMB/AFP permissions have been reset back to their normal values.  There will be an interruption in access to the server for a few moments","success");
+      swal("Permissions Reset","The SMB/AFP permissions have been reset back to their normal values.  There will be an interruption in access to the server for a few moments.  Ideally you should restart your server to completely restore settings.","success");
       listenForAttack();
     }
   });
