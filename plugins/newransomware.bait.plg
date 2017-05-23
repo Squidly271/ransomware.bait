@@ -136,7 +136,7 @@ then
   sed -i '/diskComment/d' /boot/config/plugins/ransomware.bait/shareBackupDisks/disk.cfg
   sed -i '/diskComment/d' /boot/config/disk.cfg
   sed -i '/cacheComment/d' /boot/config/plugins/ransomware.bait/shareBackupDisks/disk.cfg
-  sed -i '/diskComment/d' /boot/config/disk.cfg
+  sed -i '/cacheComment/d' /boot/config/disk.cfg
 fi
 rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2>/dev/null|grep -v '&version;')
 echo "Stopping the service"
