@@ -68,7 +68,7 @@ There are 2 modes which this plugin operates in (Both modes can operate simultan
 <br>
 <br>
 
-<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zps6c0k0etk.png' width=500px></center></td><td>
+<table><tr><td><image src='https://github.com/Squidly271/ransomware.bait/raw/master/pics/1.png' width=500px></center></td><td>
 
 <table>
 <tr><td width=25%><b>Ransomware Protection Version</b></td><td>Displays the currently running version (if any updates are available, it will also display here, a link to the support thread, and a popup detailing the credits for the plugin)</td></tr>
@@ -92,7 +92,7 @@ There are 2 modes which this plugin operates in (Both modes can operate simultan
 <br><br>
 <b>Bait File Creation</b> is where you change the settings to put the bait files within your <em>existing</em> shares.
 <br><br>
-<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zpssdrms2cc.png' width='500px'></td><td>
+<table><tr><td><image src='https://github.com/Squidly271/ransomware.bait/raw/master/pics/2.png' width='500px'></td><td>
 
 <table>
 <tr><td width=25%><b>Utilize Bait File Service</b></td><td>When set to "yes", bait files will be placed within your existing user shares.  Set it to no to have the plugin not place any bait files within the user shares</td></tr>
@@ -112,7 +112,7 @@ There are 2 modes which this plugin operates in (Both modes can operate simultan
 The second mode of operation for this plugin involves the creation of specialized Bait Shares.  This attempts to inundate the ransomware attack program with far more bait files than legitimate document files stored on your array.<br>
 Each bait share is composed of ~50,000 randomly named bait files within numerous randomly named folders within randomly named shares.  Even though there are ~50,000 bait files per share, the net disk space used on your array is only around <b>100Meg per share</b> due to the use of hardlinks)
 <br><br><br>
-<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zpsy5wj8sfl.png' width='500px'></td><td>
+<table><tr><td><image src='https://github.com/Squidly271/ransomware.bait/raw/master/pics/3.png' width='500px'></td><td>
 <table>
 <tr><td width=25%><b>Utilize Bait Share Service</b></td><td>When set to yes, the specialized bait shares will be placed onto your array</td></tr>
 <tr><td><b>Bait Share Prefix</b></td><td>For easy identification, each bait share will be named with this setting as a prefix</td></tr>
@@ -124,7 +124,7 @@ Each bait share is composed of ~50,000 randomly named bait files within numerous
 <hr>
 <p id='actions'><font color='purple' size='4'>Actions</font></p>
 <br><br>
-<table><tr><td><image src='http://i46.photobucket.com/albums/f109/squidaz/Untitled_zpsawzvxbfk.png' width='500px'></td><td>
+<table><tr><td><image src='https://github.com/Squidly271/ransomware.bait/raw/master/pics/4.png' width='500px'></td><td>
 <table>
 <tr><td width=25%><b>Set SMB / AFP to be read-only on detection</b></td><td>Selecting yes here will immediately reconfigure your shares to be read-only once an attack is detected (There will be an interruption of your network access to the service lasting up to about a minute</td></tr>
 <tr><td><b>Stop Array On Detection</b></td><td>Selecting yes here will stop your array when an attack occurs.  Note that since the SMB / AFP services are actually stopped rather late in unRaid's array stop routines, this plugin immediately stops those services automatically if an attack occurs</td></tr>
@@ -147,7 +147,7 @@ If you have been attacked by ransomware and your files on your other computers h
 <p id='credits'><font color='purple' size='4'>Credits</font></p>
 <br><br>
 <table>
-<tr><td width=60px><img src='http://www.jrj-socrates.com/Cartoon%20Pics/Misc/Tripping%20The%20Rift/Chode_300.gif' width='50px';height='48px'></td><td width=15%><strong>Andrew Zawadzki</strong></td><td>Main Development</td></tr>
+<tr><td width=60px><img src='https://raw.githubusercontent.com/Squidly271/plugin-repository/master/Chode_300.gif' width='50px';height='48px'></td><td width=15%><strong>Andrew Zawadzki</strong></td><td>Main Development</td></tr>
 <tr><td></td><td><strong>RobJ</strong></td><td>Additional Ideas</td></tr>
 <tr><td><img src='https://upload.wikimedia.org/wikipedia/commons/3/34/Bram_Stoker_1906.jpg' width='50px'></td><td><strong>Bram Stoker</strong></td><td><em>Dracula</em> &copy;1897 (copyright expired)<br>Random word dictionary</br>Read it <a href='http://literature.org/authors/stoker-bram/dracula/index.html'>Here</a></td></tr>
 </table>

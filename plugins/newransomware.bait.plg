@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "ransomware.bait">
 <!ENTITY author    "Andrew Zawadzki">
-<!ENTITY version   "2017.05.23">
-<!ENTITY md5       "1b9b510dd99137f0f381d7f2b9be45c2">
+<!ENTITY version   "2018.01.09">
+<!ENTITY md5       "0bb0683a11e24923c38d4ea7c559f11b">
 <!ENTITY launch    "Settings/Ransomware">
 <!ENTITY plugdir   "/usr/local/emhttp/plugins/&name;">
 <!ENTITY github    "Squidly271/ransomware.bait">
@@ -13,6 +13,9 @@
 <PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;">
 
 <CHANGES>
+###2018.01.09
+- Update URLs for help file pictures
+
 ###2017.05.21
 - Fixed: Disk share settings not properly restoring
 
