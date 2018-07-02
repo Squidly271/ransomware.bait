@@ -245,8 +245,10 @@ function scan($path) {
 
 function smbReadOnly($settings) {
   global $ransomwarePaths;
-
-  # get the user list
+exec("/etc/rc.d/rc.samba stop");
+exec("/etc/rc.d/rc.atalk stop");
+}
+/*   # get the user list
   
   unset($output);
   exec("cat /etc/passwd | grep :100:",$output);  # group of 100 (nobody)
@@ -379,9 +381,8 @@ function smbReadOnly($settings) {
     file_put_contents("/etc/samba/unassigned-shares/$udShare",$newConfig);
   }
     
-  if ( $settings['actions']['readOnlySMB'] == "true" ) { exec("/etc/rc.d/rc.samba stop"); }
-  if ( $settings['actions']['readOnlyAFP'] == "true" ) { exec("/etc/rc.d/rc.atalk stop"); }
-}
+
+} */
 
 function createIniFile($shareSettings) {
   unset($cfg);

@@ -171,8 +171,6 @@ function deleteBait() {
 <input type='button' value='Start Background Services' id='startBackground' onclick='startBackground();' disabled><input type='button' value='Stop Background Services' id='stopBackground' onclick='stopBackground();' disabled><input type='button' id='startDelete' value='Delete Previous Bait Files' onclick='deleteBait();' disabled>
 <br><span class='restartBaitRequired' style='display:none'><font color='red'>Settings Changed.  You will need to stop and start the service</font></span>
 <span id='settingsScript'><?=$settingsOutput?></span>
-<div id='setReadOnlyMode'><center><figure><a onclick='setReadOnly();' style='cursor:pointer'><img src='/plugins/ransomware.bait/images/biglock.png' style='width:96px;height:96px'></a><figcaption><font color='purple'>Click The Lock To Immediately Set SMB/AFP to Be Read-Only</font></figcaption></figure></center></div>
 
-<div id='readOnlyMode' style='display:none'><center><font size='3' color='red'>SMB RUNNING IN READ-ONLY MODE.  Click <a onclick='resetSMBPermissions();' style='cursor:pointer'>HERE</a> to reset the permissions</font></center><br><br></div>
-
+<center><font size='4'>If an attack happens (or a false positive), you MUST stop and restart the array in order to restore normal functions of network shares</font></center>
 <span id='startable' style='display:none'>no</span>
